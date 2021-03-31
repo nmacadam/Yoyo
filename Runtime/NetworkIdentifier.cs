@@ -3,23 +3,35 @@
 
 using System.Collections;
 using UnityEngine;
+using Yoyo.Attributes;
 
 namespace Yoyo.Runtime
 {
+    // rename to gameobject id
 	public class NetworkIdentifier : MonoBehaviour
 	{
-		public int Type;
-        public int Owner = -10;
-        public int NetId = -10;
-        public bool IsInit;
-        public bool IsLocalPlayer;
-        public float UpdateFrequency = .1f;
-        public YoyoSession Session;
-        public string GameObjectMessages = "";
-        public object _lock = new object();
+        [Header("Network Info")]
+        [SerializeField, DisableEditing] private int _owner = -10;
+        [SerializeField, DisableEditing] private int _identifier = -10;
+        [SerializeField, DisableEditing] private bool _isInitialized;
+        [SerializeField, DisableEditing] private bool _isLocalPlayer;
 
+        [Header("GameObject Info")]
+		public int Type;
+        public string GameObjectMessages = "";
+
+        private YoyoSession _session;
+
+        public YoyoSession Session { get => _session; private set => _session = value; }
         public bool IsClient => Session.Environment == YoyoEnvironment.Client;
         public bool IsServer => Session.Environment == YoyoEnvironment.Server;
+        public bool IsLocalPlayer => Owner == Session.LocalPlayerId;
+
+        public bool IsInitialized { get => _isInitialized; set => _isInitialized = value; }
+        public int Owner { get => _owner; set => _owner = value; }
+        public int Identifier { get => _identifier; set => _identifier = value; }
+
+        public object _lock = new object();
 
         // Use this for initialization
         void Start()
@@ -43,13 +55,13 @@ namespace Yoyo.Runtime
             if (IsClient)
             {
                 //Then we know we need to destroy this object and wait for it to be re-created by the server
-                if (NetId == -10)
+                if (Identifier == -10)
                 {   
                     Debug.Log("We are destroying the non-server networked objects");
                     GameObject.Destroy(this.gameObject);
                 }
             }
-            if (IsServer && NetId == -10)
+            if (IsServer && Identifier == -10)
             {
                 //We need to add ourselves to the networked object dictionary
                 Type = -1;
@@ -70,24 +82,17 @@ namespace Yoyo.Runtime
                 {
                     lock (Session._objLock)
                     {
-                        NetId = Session.ObjectCounter;
+                        Identifier = Session.ObjectCounter;
                         Session.ObjectCounter++;
                         Owner = -1;
-                        Session.NetObjs.Add(NetId, this);
+                        Session.NetObjs.Add(Identifier, this);
                     }
                 }
             }
 
-            yield return new WaitUntil(() => (Owner != -10 && NetId != -10));
-            if(Owner == Session.LocalPlayerId)
-            {
-                IsLocalPlayer = true;
-            }
-            else
-            {
-                IsLocalPlayer = false;
-            }
-            IsInit = true;
+            yield return new WaitUntil(() => (Owner != -10 && Identifier != -10));
+            _isLocalPlayer = IsLocalPlayer;
+            IsInitialized = true;
             if (IsClient)
             {
                 NotifyDirty();
@@ -117,7 +122,7 @@ namespace Yoyo.Runtime
             {
                 if (Session.Environment == YoyoEnvironment.Server && Session.Connections.ContainsKey(Owner) == false && Owner != -1)
                 {
-                    Session.NetDestroyObject(NetId);
+                    Session.NetDestroyObject(Identifier);
                 }
             }
             catch (System.NullReferenceException)
@@ -150,7 +155,7 @@ namespace Yoyo.Runtime
 
         public void NotifyDirty()
         {
-            this.AddMsg("DIRTY#" + NetId);
+            this.AddMsg("DIRTY#" + Identifier);
         }
 	}
 }

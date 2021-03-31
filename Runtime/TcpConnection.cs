@@ -181,7 +181,7 @@ namespace Yoyo.Runtime
                                     Temp = GameObject.Instantiate(Session.NetworkPlayerManager, pos, qtemp);
                                 }
                                 Temp.GetComponent<NetworkIdentifier>().Owner = o;
-                                Temp.GetComponent<NetworkIdentifier>().NetId = n;
+                                Temp.GetComponent<NetworkIdentifier>().Identifier = n;
                                 Temp.GetComponent<NetworkIdentifier>().Type = type;
                                 Session.NetObjs[n] = Temp.GetComponent<NetworkIdentifier>();
                                 /*lock(MyCore._masterMessage)

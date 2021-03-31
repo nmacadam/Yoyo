@@ -66,7 +66,7 @@ namespace Lab4.Phase1
 				{
 					PlayerOptions options = JsonUtility.FromJson<PlayerOptions>(value);
 
-					GameObject go = Session.NetCreateObject(_playerPrefabId, Owner);
+					GameObject go = NetId.Session.NetCreateObject(_playerPrefabId, NetId.Owner);
 					_player = go.GetComponent<Phase1Player>();
 					_player.ApplyProperties(options);
 					Debug.Log("received options: " + value);
@@ -86,7 +86,7 @@ namespace Lab4.Phase1
 					var players = FindObjectsOfType<Phase1Player>();
 					foreach (var player in players)
 					{
-						if (player.NetId == _options.NetId)
+						if (player.NetId.Owner == _options.NetId)
 						{
 							Debug.Log("Applied update to " + _options.NetId);
 							player.ApplyProperties(_options);

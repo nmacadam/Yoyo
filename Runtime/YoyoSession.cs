@@ -162,7 +162,7 @@ namespace Yoyo.Runtime
                     tempRot = tempRot.Replace(')', '\0');            
 
                     string MSG = "CREATE#" + entry.Value.Type + "#" + entry.Value.Owner +
-                   "#" + entry.Value.NetId + "#" + entry.Value.transform.position.x.ToString("n2") + 
+                   "#" + entry.Value.Identifier + "#" + entry.Value.transform.position.x.ToString("n2") + 
                    "#" + entry.Value.transform.position.y.ToString("n2") + "#" 
                    + entry.Value.transform.position.z.ToString("n2") + tempRot+"\n";
                     Connections[ConCounter - 1].Send(Encoding.ASCII.GetBytes(MSG));
@@ -456,7 +456,7 @@ namespace Yoyo.Runtime
                         temp = GameObject.Instantiate(NetworkPlayerManager, initPos, rotation);
                     }
                     temp.GetComponent<NetworkIdentifier>().Owner = ownMe;
-                    temp.GetComponent<NetworkIdentifier>().NetId = ObjectCounter;
+                    temp.GetComponent<NetworkIdentifier>().Identifier = ObjectCounter;
                     temp.GetComponent<NetworkIdentifier>().Type = type;
                     NetObjs[ObjectCounter] = temp.GetComponent<NetworkIdentifier>();
                     ObjectCounter++;
