@@ -40,7 +40,7 @@ namespace Yoyo.Runtime
         [SerializeField, DisableEditing]
         private bool _currentlyConnecting = false;
 
-        public Socket TCP_Listener;
+        private Socket TCP_Listener;
         public Dictionary<int, TcpConnection> Connections;
         public Dictionary<int, NetworkIdentifier> NetObjs;
 
@@ -57,10 +57,12 @@ namespace Yoyo.Runtime
         public GameObject NetworkPlayerManager;//This will be the first thing that is spawned!
 
         //Locks
-        public object _conLock = new object();
         public object _objLock = new object();
-        public object _masterMessage = new object();
         public object _waitingLock = new object();
+
+        private object _conLock = new object();
+        private object _masterMessage = new object();
+
         public DateTime StartConnection;
 
 
