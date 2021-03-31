@@ -9,16 +9,17 @@ namespace Yoyo.Runtime
 	[RequireComponent(typeof(NetworkIdentifier))]
     public abstract class NetworkBehaviour : MonoBehaviour
     {
-        public bool IsDirty = false;
         private NetworkIdentifier _netId;
+        private bool _dirty = false;
+
+        public NetworkIdentifier NetId { get => _netId; private set => _netId = value; }
+        public bool IsDirty { get => _dirty; set => _dirty = value; }
 
         public bool IsClient => NetId.Session.Environment == YoyoEnvironment.Client;
         public bool IsServer => NetId.Session.Environment == YoyoEnvironment.Server;
         public bool IsLocalPlayer => NetId.IsLocalPlayer;
-        public NetworkIdentifier NetId { get => _netId; private set => _netId = value; }
 
-        // Start is called before the first frame update
-        public void Awake()
+        private void Awake()
         {
             NetId = gameObject.GetComponent<NetworkIdentifier>();
             if(NetId == null)
@@ -27,12 +28,8 @@ namespace Yoyo.Runtime
             }
             StartCoroutine(SlowStart());
         }
-        void Start()
-        {
-         
-        }
 
-        IEnumerator SlowStart()
+        private IEnumerator SlowStart()
         {
             yield return new WaitUntil(() => NetId.IsInitialized);
             StartCoroutine(SlowUpdate());
@@ -53,6 +50,7 @@ namespace Yoyo.Runtime
                 NetId.AddMsg(msg);
             }
         }
+
         public void SendUpdate(string var, string value)
         {
             var = var.Replace('#', ' ');
