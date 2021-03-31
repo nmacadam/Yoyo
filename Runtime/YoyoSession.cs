@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using UnityEngine;
+using Yoyo.Attributes;
 
 namespace Yoyo.Runtime
 {
@@ -20,18 +21,28 @@ namespace Yoyo.Runtime
 
 	public partial class YoyoSession : MonoBehaviour
 	{
-		public string IpAddress;
-        public int Port;
-        public bool IsConnected = false;
-        public YoyoEnvironment Environment;
-        public bool CanJoin = true;
-        public int MaxConnections = 100;
-        public int LocalPlayerId = -1;
-        public bool CurrentlyConnecting = false;
+        [Header("Session Options")]
+		[SerializeField] private string _ipAddress = default;
+        [SerializeField] private int _port = 0;
+        [SerializeField, Range(1, 128)] 
+		private int _maxConnections = 32;
+        public float MasterTimer = .05f;
+        
+        [Header("Session State")]
+        [SerializeField, DisableEditing]
+        private YoyoEnvironment _environment = YoyoEnvironment.None;
+        [SerializeField, DisableEditing]
+        private int _localPlayerId = -1;
+        [SerializeField, DisableEditing]
+        private bool _isConnected = false;
+        [SerializeField, DisableEditing]
+        private bool _canJoin = true;
+        [SerializeField, DisableEditing]
+        private bool _currentlyConnecting = false;
+
         public Socket TCP_Listener;
         public Dictionary<int, TcpConnection> Connections;
         public Dictionary<int, NetworkIdentifier> NetObjs;
-        public float MasterTimer = .05f;
 
         //Game Object variables
         public int ObjectCounter = 0;
@@ -52,20 +63,28 @@ namespace Yoyo.Runtime
         public object _waitingLock = new object();
         public DateTime StartConnection;
 
+
+        public YoyoEnvironment Environment => _environment;
+
+        public bool IsConnected { get => _isConnected; private set => _isConnected = value; }
+        public bool CanJoin { get => _canJoin; private set => _canJoin = value; }
+        public bool CurrentlyConnecting { get => _currentlyConnecting; private set => _currentlyConnecting = value; }
+        public int LocalPlayerId { get => _localPlayerId; set => _localPlayerId = value; }
+
         // Use this for initialization
         void Start()
         {
-            Environment = YoyoEnvironment.None;
+            _environment = YoyoEnvironment.None;
             IsConnected = false;
             CurrentlyConnecting = false;
             //ipAddress = "127.0.0.1";//Local host
-            if (IpAddress == "")
+            if (_ipAddress == "")
             {
-                IpAddress = "127.0.0.1";//Local host
+                _ipAddress = "127.0.0.1";//Local host
             }
-            if (Port == 0)
+            if (_port == 0)
             {
-                Port = 9001;
+                _port = 9001;
             }
             Connections = new Dictionary<int, TcpConnection>();
             NetObjs = new Dictionary<int, NetworkIdentifier>();
@@ -100,19 +119,19 @@ namespace Yoyo.Runtime
         public IEnumerator Listen()
         {
             //If we are listening then we are the server.
-            Environment = YoyoEnvironment.Server;
+            _environment = YoyoEnvironment.Server;
             IsConnected = true;
             LocalPlayerId = -1; //For server the localplayer id will be -1.
                                 //Initialize port to listen to
                                 
             IPAddress ip = (IPAddress.Any);
-            IPEndPoint endP = new IPEndPoint(ip, Port);
+            IPEndPoint endP = new IPEndPoint(ip, _port);
             //We could do UDP in some cases but for now we will do TCP
             TCP_Listener = new Socket(ip.AddressFamily,SocketType.Stream, ProtocolType.Tcp);
 
             //Now I have a socket listener.
             TCP_Listener.Bind(endP);
-            TCP_Listener.Listen(MaxConnections);
+            TCP_Listener.Listen(_maxConnections);
 
             while(CanJoin)
             {
@@ -194,12 +213,12 @@ namespace Yoyo.Runtime
         }
         public IEnumerator ConnectingClient()
         {
-            Environment = YoyoEnvironment.None;
+            _environment = YoyoEnvironment.None;
             IsConnected = false;
             CurrentlyConnecting = false;
             //Setup our socket
-            IPAddress ip = (IPAddress.Parse(IpAddress));
-            IPEndPoint endP = new IPEndPoint(ip, Port);
+            IPAddress ip = (IPAddress.Parse(_ipAddress));
+            IPEndPoint endP = new IPEndPoint(ip, _port);
             Socket clientSocket = new Socket(ip.AddressFamily, SocketType.Stream,
                 ProtocolType.Tcp);
             //Connect client
@@ -218,7 +237,7 @@ namespace Yoyo.Runtime
         public void ConnectingCallback(System.IAsyncResult ar)
         {
             //Client will use the con list (but only have one entry).
-            Environment = YoyoEnvironment.Client;
+            _environment = YoyoEnvironment.Client;
             TcpConnection temp = new TcpConnection();
             temp.TCPCon = (Socket)ar.AsyncState;
             temp.TCPCon.EndConnect(ar);//This finishes the TCP connection (DOES NOT DISCONNECT)    
@@ -251,7 +270,7 @@ namespace Yoyo.Runtime
                     catch
                     {}
                 }
-                Environment = YoyoEnvironment.None;
+                _environment = YoyoEnvironment.None;
                 this.IsConnected = false;
                 this.LocalPlayerId = -10;
                 foreach (KeyValuePair<int, NetworkIdentifier> obj in NetObjs)
@@ -357,7 +376,7 @@ namespace Yoyo.Runtime
                     }
                 }
                 catch { }
-                Environment = YoyoEnvironment.None;
+                _environment = YoyoEnvironment.None;
                 try
                 {
                     foreach (KeyValuePair<int, NetworkIdentifier> obj in NetObjs)
@@ -382,7 +401,7 @@ namespace Yoyo.Runtime
                     //connections already destroyed.
                 }
                 IsConnected = false;
-                Environment = YoyoEnvironment.None;
+                _environment = YoyoEnvironment.None;
                 CurrentlyConnecting = false;
                 CanJoin = true;
                 try
@@ -559,12 +578,12 @@ namespace Yoyo.Runtime
 
         public void SetIp(string ip)
         {
-            IpAddress = ip;
+            _ipAddress = ip;
         }
 
         public void SetPort(string p)
         {
-            Port = int.Parse(p);
+            _port = int.Parse(p);
         }
 	}
 }
