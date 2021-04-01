@@ -1,3 +1,17 @@
-﻿{
-	"name": "Yoyo.Editor"
+{
+    "name": "Yoyo.Editor",
+    "references": [
+        "GUID:53d1cc2c816a6e44e8b4cb2eb40214fc"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

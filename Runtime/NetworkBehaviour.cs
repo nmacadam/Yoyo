@@ -9,44 +9,29 @@ namespace Yoyo.Runtime
 	[RequireComponent(typeof(NetworkIdentifier))]
     public abstract class NetworkBehaviour : MonoBehaviour
     {
-        public bool IsDirty = false;
-        public bool IsLocalPlayer;
-        public int Owner;
-        public int Type;
-        public int NetId;
-        public YoyoSession Session;
-        public NetworkIdentifier MyId;
+        private NetworkIdentifier _netId;
+        private bool _dirty = false;
 
-        public bool IsClient => Session.Environment == YoyoEnvironment.Client;
-        public bool IsServer => Session.Environment == YoyoEnvironment.Server;
-        
-        // Start is called before the first frame update
-        public void Awake()
+        public NetworkIdentifier NetId { get => _netId; private set => _netId = value; }
+        public bool IsDirty { get => _dirty; set => _dirty = value; }
+
+        public bool IsClient => NetId.Session.Environment == YoyoEnvironment.Client;
+        public bool IsServer => NetId.Session.Environment == YoyoEnvironment.Server;
+        public bool IsLocalPlayer => NetId.IsLocalPlayer;
+
+        private void Awake()
         {
-            MyId = gameObject.GetComponent<NetworkIdentifier>();
-            Session = GameObject.FindObjectOfType<YoyoSession>();
-            if(Session == null)
-            {
-                throw new System.Exception("ERROR: There is no network core on the scene.");
-            }
-            if(MyId == null)
+            NetId = gameObject.GetComponent<NetworkIdentifier>();
+            if(NetId == null)
             {
                 throw new System.Exception("ERROR: There is no network ID on this object");
             }
             StartCoroutine(SlowStart());
         }
-        void Start()
-        {
-         
-        }
 
-        IEnumerator SlowStart()
+        private IEnumerator SlowStart()
         {
-            yield return new WaitUntil(() => MyId.IsInit);
-            IsLocalPlayer = MyId.IsLocalPlayer;
-            Owner = MyId.Owner;
-            Type = MyId.Type;
-            NetId = MyId.NetId;
+            yield return new WaitUntil(() => NetId.IsInitialized);
             StartCoroutine(SlowUpdate());
         }
 
@@ -59,22 +44,23 @@ namespace Yoyo.Runtime
             var = var.Replace('\n', ' ');
             value = value.Replace('#', ' ');
             value = value.Replace('\n', ' ');
-            if (Session != null && Session.Environment == YoyoEnvironment.Client && IsLocalPlayer && MyId.GameObjectMessages.Contains(var) == false)
+            if (NetId.Session != null && IsClient && IsLocalPlayer && NetId.GameObjectMessages.Contains(var) == false)
             {
-                string msg = "COMMAND#" + MyId.NetId + "#" + var + "#" + value;
-                MyId.AddMsg(msg);
+                string msg = "COMMAND#" + NetId.Identifier + "#" + var + "#" + value;
+                NetId.AddMsg(msg);
             }
         }
+
         public void SendUpdate(string var, string value)
         {
             var = var.Replace('#', ' ');
             var = var.Replace('\n', ' ');
             value = value.Replace('#', ' ');
             value = value.Replace('\n', ' ');
-            if (Session != null && Session.Environment == YoyoEnvironment.Server && MyId.GameObjectMessages.Contains(var)==false)
+            if (NetId.Session != null && IsServer && NetId.GameObjectMessages.Contains(var)==false)
             {
-                string msg = "UPDATE#" + MyId.NetId + "#" + var + "#" + value;
-                MyId.AddMsg(msg);
+                string msg = "UPDATE#" + NetId.Identifier + "#" + var + "#" + value;
+                NetId.AddMsg(msg);
             }
         }
     }

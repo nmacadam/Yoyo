@@ -13,7 +13,7 @@ namespace Tanks
 		
 		public void OnStartServer()
 		{
-			_networkCore.Environment = YoyoEnvironment.Server;
+			//_networkCore.Environment = YoyoEnvironment.Server;
 
 			_networkCore.StartServer();
 
@@ -23,7 +23,7 @@ namespace Tanks
 
 		public void OnStartClient()
 		{
-			_networkCore.Environment = YoyoEnvironment.Client;
+			//_networkCore.Environment = YoyoEnvironment.Client;
 
 			_clientLogin.Login();
 			gameObject.SetActive(false);

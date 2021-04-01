@@ -111,11 +111,11 @@ namespace Lab4.Phase1
 
         public override IEnumerator SlowUpdate()
         {
-			int connections = Session.Connections.Count;
+			int connections = NetId.Session.Connections.Count;
 
 			while (true)
 			{
-				_options.NetId = NetId;
+				_options.NetId = NetId.Identifier;
 				transform.position = _initialPosition + Vector3.right * _options.NetId;
 
 				if (_isInitialized)
