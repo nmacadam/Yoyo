@@ -101,11 +101,8 @@ namespace Yoyo.Runtime
             StartConnection = DateTime.Now;
             Socket listener = (Socket)ar.AsyncState;
             Socket handler = listener.EndAccept(ar);
-            TcpConnection temp = new TcpConnection();
-            temp.TCPCon = handler;
-            temp.PlayerId = ConCounter;
+            TcpConnection temp = new TcpConnection(ConCounter, handler, this);
             ConCounter++;
-            temp.Session = this;
             lock (_conLock)
             {
                 Connections.Add(temp.PlayerId, temp);

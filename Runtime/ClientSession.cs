@@ -48,13 +48,11 @@ namespace Yoyo.Runtime
 
         public void ConnectingCallback(System.IAsyncResult ar)
         {
-            //Client will use the con list (but only have one entry).
+            // Client will use the con list (but only have one entry).
             _environment = YoyoEnvironment.Client;
-            TcpConnection temp = new TcpConnection();
-            temp.TCPCon = (Socket)ar.AsyncState;
+            TcpConnection temp = new TcpConnection(0, (Socket)ar.AsyncState, this);
             temp.TCPCon.EndConnect(ar);//This finishes the TCP connection (DOES NOT DISCONNECT)    
-            IsConnected = true;   
-            temp.Session = this;
+            IsConnected = true;
             Connections.Add(0, temp);
             CurrentlyConnecting = true;
         }

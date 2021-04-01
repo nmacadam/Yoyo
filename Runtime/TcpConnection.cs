@@ -10,19 +10,31 @@ namespace Yoyo.Runtime
 {
 	public class TcpConnection
 	{
-		public int PlayerId;
-        public Socket TCPCon;
-        public YoyoSession Session;
+        private int _playerId;
+        private Socket _socket;
+        private YoyoSession _session;
 
-        public byte[] TCPbuffer = new byte[1024];
-        public StringBuilder TCPsb = new StringBuilder();
-        public bool TCPDidReceive = false;
-        public bool TCPIsSending = false;
+        private byte[] _buffer = new byte[1024];
+        private StringBuilder _stringBuilder = new StringBuilder();
+        private bool _tcpDidReceive = false;
+        private bool _tcpIsSending = false;
 
+        private bool _isDisconnecting = false;
+        private bool _didDisconnect = false;
 
-        //Dealing with disconnect
-        public bool IsDisconnecting = false;
-        public bool DidDisconnect = false;
+        public int PlayerId { get => _playerId; private set => _playerId = value; }
+        public Socket TCPCon { get => _socket; private set => _socket = value; }
+        public YoyoSession Session { get => _session; private set => _session = value; }
+
+        public bool IsDisconnecting { get => _isDisconnecting; set => _isDisconnecting = value; }
+        public bool DidDisconnect { get => _didDisconnect; set => _didDisconnect = value; }
+
+        public TcpConnection(int playerId, Socket socket, YoyoSession session)
+        {
+            _playerId = playerId;
+            _socket = socket;
+            _session = session;
+        }
 
         /// <summary>
         /// SEND STUFF
@@ -35,13 +47,13 @@ namespace Yoyo.Runtime
             try
             {
                 TCPCon.BeginSend(byteData, 0, byteData.Length, 0, new System.AsyncCallback(this.SendCallback), TCPCon);
-                TCPIsSending = true;
+                _tcpIsSending = true;
             }
             catch
             {
                 DidDisconnect = true;
                  //Can only happen when the server is pulled offline unexpectedly.
-                 TCPIsSending = false;
+                 _tcpIsSending = false;
             }
         }
 
@@ -49,7 +61,7 @@ namespace Yoyo.Runtime
         {
             try
             {
-                TCPIsSending = false;   
+                _tcpIsSending = false;   
                 if (IsDisconnecting && Session.Environment == YoyoEnvironment.Client)
                 {
 
@@ -76,7 +88,7 @@ namespace Yoyo.Runtime
                 {
                     try
                     {
-                        TCPCon.BeginReceive(TCPbuffer, 0, 1024, 0, new System.AsyncCallback(TCPRecvCallback), this);
+                        TCPCon.BeginReceive(_buffer, 0, 1024, 0, new System.AsyncCallback(TCPRecvCallback), this);
                         IsRecv = true;
                         break;
                     }
@@ -87,9 +99,9 @@ namespace Yoyo.Runtime
                     yield return new WaitForSeconds(.1f);
                 }
                 //Wait to recv messages
-                yield return new WaitUntil(() => TCPDidReceive);
-                TCPDidReceive = false;
-                string responce = TCPsb.ToString();
+                yield return new WaitUntil(() => _tcpDidReceive);
+                _tcpDidReceive = false;
+                string responce = _stringBuilder.ToString();
                 //if (responce.Trim(' ') == "")
                 //{
                     //We do NOT want any empty strings.  It will cause a problem.
@@ -242,9 +254,9 @@ namespace Yoyo.Runtime
                     }
                 }
 
-                TCPsb.Length = 0;
-                TCPsb = new StringBuilder();
-                TCPDidReceive = false;
+                _stringBuilder.Length = 0;
+                _stringBuilder = new StringBuilder();
+                _tcpDidReceive = false;
                 yield return new WaitForSeconds(.01f);//This will prevent traffic from stalling other co-routines.
             }
         }
@@ -257,15 +269,15 @@ namespace Yoyo.Runtime
                 bytesRead = TCPCon.EndReceive(ar);
                 if (bytesRead > 0)
                 {
-                    this.TCPsb.Append(Encoding.ASCII.GetString(this.TCPbuffer, 0, bytesRead));
-                    string ts = this.TCPsb.ToString();
+                    this._stringBuilder.Append(Encoding.ASCII.GetString(this._buffer, 0, bytesRead));
+                    string ts = this._stringBuilder.ToString();
                     if (ts[ts.Length - 1] != '\n')
                     {
-                        TCPCon.BeginReceive(TCPbuffer, 0, 1024, 0, new System.AsyncCallback(TCPRecvCallback), this);                      
+                        TCPCon.BeginReceive(_buffer, 0, 1024, 0, new System.AsyncCallback(TCPRecvCallback), this);                      
                     }
                     else
                     {
-                        this.TCPDidReceive = true;                    
+                        this._tcpDidReceive = true;                    
                     }
                 }
             }
