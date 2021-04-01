@@ -22,7 +22,7 @@ namespace Yoyo.Runtime
 	public partial class YoyoSession : MonoBehaviour
 	{
         [Header("Session Options")]
-		[SerializeField] private string _ipAddress = default;
+		[SerializeField, DisplayAs("IP Address")] private string _ipAddressString = default;
         [SerializeField] private int _port = 0;
         [SerializeField, Range(1, 128)] 
 		private int _maxConnections = 32;
@@ -39,6 +39,8 @@ namespace Yoyo.Runtime
         private bool _canJoin = true;
         [SerializeField, DisableEditing]
         private bool _currentlyConnecting = false;
+
+        private IPAddress _ipAddress;
 
         public Dictionary<int, TcpConnection> Connections;
         public Dictionary<int, NetworkIdentifier> NetObjs;
@@ -67,6 +69,8 @@ namespace Yoyo.Runtime
 
         public YoyoEnvironment Environment => _environment;
 
+        public IPAddress Address => _ipAddress;
+
         public bool IsConnected { get => _isConnected; private set => _isConnected = value; }
         public bool CanJoin { get => _canJoin; private set => _canJoin = value; }
         public bool CurrentlyConnecting { get => _currentlyConnecting; private set => _currentlyConnecting = value; }
@@ -79,10 +83,12 @@ namespace Yoyo.Runtime
             IsConnected = false;
             CurrentlyConnecting = false;
             //ipAddress = "127.0.0.1";//Local host
-            if (_ipAddress == "")
+            if (_ipAddressString == "")
             {
-                _ipAddress = "127.0.0.1";//Local host
+                _ipAddressString = "127.0.0.1"; //Local host
             }
+            _ipAddress = IPAddress.Parse(_ipAddressString);
+
             if (_port == 0)
             {
                 _port = 9001;
@@ -254,7 +260,7 @@ namespace Yoyo.Runtime
                     NetObjs.Clear();
                     Connections.Clear();
                     StopCoroutine(ListeningThread);  
-                    TCP_Listener.Close();
+                    _tcpListener.Close();
                     
                 }
                 catch (System.NullReferenceException)

@@ -29,7 +29,7 @@ namespace Yoyo.Runtime
             IsConnected = false;
             CurrentlyConnecting = false;
             //Setup our socket
-            IPAddress ip = (IPAddress.Parse(_ipAddress));
+            IPAddress ip = (IPAddress.Parse(_ipAddressString));
             IPEndPoint endP = new IPEndPoint(ip, _port);
             Socket clientSocket = new Socket(ip.AddressFamily, SocketType.Stream,
                 ProtocolType.Tcp);

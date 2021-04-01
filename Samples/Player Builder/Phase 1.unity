@@ -456,16 +456,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96f19f0c00be7454689462c21317591a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  IpAddress: 
-  Port: 0
-  IsConnected: 0
-  IsServer: 0
-  IsClient: 0
-  CanJoin: 1
-  MaxConnections: 100
-  LocalPlayerId: -1
-  CurrentlyConnecting: 0
+  _ipAddressString: 
+  _port: 0
+  _maxConnections: 32
   MasterTimer: 0.05
+  _environment: 0
+  _localPlayerId: -1
+  _isConnected: 0
+  _canJoin: 1
+  _currentlyConnecting: 0
   ObjectCounter: 0
   ConCounter: 0
   SpawnPrefab:
