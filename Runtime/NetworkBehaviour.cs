@@ -19,30 +19,18 @@ namespace Yoyo.Runtime
         public bool IsServer => NetId.Session.Environment == YoyoEnvironment.Server;
         public bool IsLocalPlayer => NetId.IsLocalPlayer;
 
-        private void OnEnable() 
-        {
-            NetId.RegisterBehaviour(this);
-        }
-
-        private void OnDisable() 
-        {
-            NetId.UnregisterBehaviour(this);
-        }
-
-        private IEnumerator Start() 
-        {
-            if(NetId == null)
-            {
-                throw new System.Exception("ERROR: There is no network ID on this object");
-            }
-
-            yield return new WaitUntil(() => NetId.IsInitialized);
-
-            StartCoroutine(SlowUpdate());
-        }
-
-        public abstract IEnumerator SlowUpdate();
         public abstract void HandleMessage(string flag, string value);
+        protected virtual IEnumerator SlowUpdate()
+        {
+            while (true)
+            {
+                NetUpdate();
+                yield return null;
+            }
+        }
+
+        protected virtual void NetStart() {}
+        protected virtual void NetUpdate() {}
 
         public void SendCommand(string var, string value)
         {
@@ -68,6 +56,29 @@ namespace Yoyo.Runtime
                 string msg = "UPDATE#" + NetId.Identifier + "#" + var + "#" + value;
                 NetId.AddMsg(msg);
             }
+        }
+
+        private void OnEnable() 
+        {
+            NetId.RegisterBehaviour(this);
+        }
+
+        private void OnDisable() 
+        {
+            NetId.UnregisterBehaviour(this);
+        }
+
+        private IEnumerator Start() 
+        {
+            if(NetId == null)
+            {
+                throw new System.Exception("ERROR: There is no network ID on this object");
+            }
+
+            yield return new WaitUntil(() => NetId.IsInitialized);
+            
+            NetStart();
+            StartCoroutine(SlowUpdate());
         }
     }
 }
