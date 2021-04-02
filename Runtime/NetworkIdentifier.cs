@@ -2,6 +2,7 @@
 // Author: Nathan MacAdam
 
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using Yoyo.Attributes;
 
@@ -21,6 +22,7 @@ namespace Yoyo.Runtime
         public string GameObjectMessages = "";
 
         private YoyoSession _session;
+        private List<NetworkBehaviour> _networkBehaviours = new List<NetworkBehaviour>();
 
         public YoyoSession Session { get => _session; private set => _session = value; }
         public bool IsClient => Session.Environment == YoyoEnvironment.Client;
@@ -33,8 +35,19 @@ namespace Yoyo.Runtime
 
         public object _lock = new object();
 
+
+        public void RegisterBehaviour(NetworkBehaviour behaviour)
+        {
+            _networkBehaviours.Add(behaviour);
+        }
+
+        public bool UnregisterBehaviour(NetworkBehaviour behaviour)
+        {
+            return _networkBehaviours.Remove(behaviour);
+        }
+
         // Use this for initialization
-        void Start()
+        private void Start()
         {
             Session = GameObject.FindObjectOfType<YoyoSession>();
             if(Session == null)
@@ -43,7 +56,8 @@ namespace Yoyo.Runtime
             }
             StartCoroutine(SlowStart());
         }
-        IEnumerator SlowStart()
+
+        private IEnumerator SlowStart()
         {
             if (!IsServer && !IsClient)
             {
@@ -98,6 +112,7 @@ namespace Yoyo.Runtime
                 NotifyDirty();
             }
         }
+
         public void AddMsg(string msg)
         {
             //Debug.Log("Message WAS: " + gameObjectMessages);
@@ -112,7 +127,6 @@ namespace Yoyo.Runtime
             }
             //Debug.Log("Message IS NOW: " + gameObjectMessages);
         }
-
 
         public void Net_Update(string type, string var, string value)
         {
@@ -138,10 +152,10 @@ namespace Yoyo.Runtime
                 if ((Session.Environment == YoyoEnvironment.Server && type == "COMMAND")
                     || (Session.Environment == YoyoEnvironment.Client && type == "UPDATE"))
                     {
-                        NetworkBehaviour[] myNets = gameObject.GetComponents<NetworkBehaviour>();
-                        for (int i = 0; i < myNets.Length; i++)
+                        //NetworkBehaviour[] myNets = gameObject.GetComponents<NetworkBehaviour>();
+                        for (int i = 0; i < _networkBehaviours.Count; i++)
                         {
-                            myNets[i].HandleMessage(var, value);
+                            _networkBehaviours[i].HandleMessage(var, value);
                         }
                     }
             }
