@@ -40,44 +40,41 @@ namespace Yoyo.Runtime
         [SerializeField, DisableEditing]
         private bool _currentlyConnecting = false;
 
+        [Header("Session Contract")]
+        public GameObject[] _contractPrefabs;
+        public GameObject _networkPlayerManager;
+
         private IPAddress _ipAddress;
-
-        public Dictionary<int, TcpConnection> Connections;
-        public Dictionary<int, NetworkIdentifier> NetObjects;
-
-        //Game Object variables
-        public int ObjectCounter = 0;
-        public int ConCounter = 0;
-        public GameObject[] SpawnPrefab;
-
-          
-        //WE are going to push a variable to notify the master an ID has a message.
-        public bool MessageWaiting = false;
-        Coroutine ListeningThread;
-        public string MasterMessage;
-        public GameObject NetworkPlayerManager;//This will be the first thing that is spawned!
-
-        //Locks
-        public object _objLock = new object();
-        public object _waitingLock = new object();
-
-        private object _conLock = new object();
-        private object _masterMessage = new object();
-
-        public DateTime StartConnection;
-
-
-        public YoyoEnvironment Environment => _environment;
+        private Dictionary<int, TcpConnection> _connections;
+        private Dictionary<int, NetworkIdentifier> _netObjects;
+        private int _netObjectCount = 0;
+        private int _connectionCount = 0;
+        
+        public GameObject[] ContractPrefabs => _contractPrefabs;
+        public GameObject NetworkPlayerManager => _networkPlayerManager;
 
         public IPAddress Address => _ipAddress;
-
+        public YoyoEnvironment Environment => _environment;
         public bool IsConnected { get => _isConnected; private set => _isConnected = value; }
         public bool CanJoin { get => _canJoin; private set => _canJoin = value; }
         public bool CurrentlyConnecting { get => _currentlyConnecting; private set => _currentlyConnecting = value; }
         public int LocalPlayerId { get => _localPlayerId; set => _localPlayerId = value; }
+        public Dictionary<int, TcpConnection> Connections { get => _connections; private set => _connections = value; }
+        public Dictionary<int, NetworkIdentifier> NetObjects { get => _netObjects; private set => _netObjects = value; }
+        public int NetObjectCount { get => _netObjectCount; set => _netObjectCount = value; }
+        public int ConnectionCount { get => _connectionCount; set => _connectionCount = value; }
 
-        // Use this for initialization
-        void Start()
+        //WE are going to push a variable to notify the master an ID has a message.
+        public bool MessageWaiting { get; set; }
+        public string MasterMessage { get; set; }
+
+        // Locks
+        public object ObjLock = new object();
+        public object WaitingLock = new object();
+        private object _conLock = new object();
+        private object _masterMessage = new object();
+
+        private void Start()
         {
             _environment = YoyoEnvironment.None;
             IsConnected = false;
@@ -259,7 +256,7 @@ namespace Yoyo.Runtime
                 {
                     NetObjects.Clear();
                     Connections.Clear();
-                    StopCoroutine(ListeningThread);  
+                    StopListening();
                     _tcpListener.Close();
                     
                 }
@@ -271,7 +268,7 @@ namespace Yoyo.Runtime
                 }              
             }
         }
-        IEnumerator WaitForDisc()
+        private IEnumerator WaitForDisc()
         {
             if (Environment == YoyoEnvironment.Client)
             {
@@ -343,7 +340,7 @@ namespace Yoyo.Runtime
                         }
                     }
                 }
-                lock (_waitingLock)
+                lock (WaitingLock)
                 {
                     MessageWaiting = false;
                 }

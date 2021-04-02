@@ -94,10 +94,10 @@ namespace Yoyo.Runtime
                 }
                 else
                 {
-                    lock (Session._objLock)
+                    lock (Session.ObjLock)
                     {
-                        Identifier = Session.ObjectCounter;
-                        Session.ObjectCounter++;
+                        Identifier = Session.NetObjectCount;
+                        Session.NetObjectCount++;
                         Owner = -1;
                         Session.NetObjects.Add(Identifier, this);
                     }
@@ -120,7 +120,7 @@ namespace Yoyo.Runtime
             lock (_lock)
             {
                 GameObjectMessages += (msg + "\n");
-                lock (Session._waitingLock)
+                lock (Session.WaitingLock)
                 {
                     Session.MessageWaiting = true;
                 }
