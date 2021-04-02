@@ -1,0 +1,34 @@
+=== v1.0.0-preview 'Clean-up' ============== 
++ Added DisableEditing attribute
++ Added LockInPlayMode attribute
+
+- YoyoSession -
++ Renamed NetworkCore to YoyoSession
++ Replaced IsClient/IsServer variables in YoyoSession with YoyoEnvironment enumeration
++ Made exposed fields private; created get properties where applicable
++ Split exposed fields into 'Session Options' section and 'Session State' section
++ Added DisableEditing attribute to 'Session State' fields
++ Creates an IPAddress object on initialization rather than reusing string
++ Made listener socket private
++ Made class-exclusive locks private
++ Made YoyoSession a partial class
++ Moved server specific code to ServerSession script
++ Moved client specific code to ClientSession script
++ Made Unity MonoBehaviour functions private
+
+- TcpConnection - 
++ Renamed NetworkConnection to TcpConnection
++ Made fields private; created get properties where applicable
++ Added a constructor
+
+- NetworkIdentifier -
++ Renamed NetworkID to NetworkIdentifier
++ Made exposed fields private; created get properties where applicable
++ Replaced IsClient and IsServer variables with properties compare against YoyoSession object's Environment variable
++ Made Unity MonoBehaviour functions private
+
+- NetworkBehaviour -
++ Renamed NetworkComponent to NetworkBehaviour
++ Replaced IsClient and IsServer variables with properties compare against YoyoSession object's Environment variable
++ Made IsDirty non-exposed
++ Made Unity MonoBehaviour functions private
