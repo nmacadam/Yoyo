@@ -26,9 +26,14 @@
 + Made exposed fields private; created get properties where applicable
 + Replaced IsClient and IsServer variables with properties compare against YoyoSession object's Environment variable
 + Made Unity MonoBehaviour functions private
++ Removed GetComponents call in update loop
++ Set up subscribe methods for NetworkBehaviours
 
 - NetworkBehaviour -
 + Renamed NetworkComponent to NetworkBehaviour
 + Replaced IsClient and IsServer variables with properties compare against YoyoSession object's Environment variable
 + Made IsDirty non-exposed
 + Made Unity MonoBehaviour functions private
++ Rolled SlowStart method into coroutine Start
++ Made NetworkIdentifier field serialized
++ Subscribes and unsubscribes from NetworkIdentifier in OnEnable and OnDisable, respectively

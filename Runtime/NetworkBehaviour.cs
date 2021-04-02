@@ -9,7 +9,7 @@ namespace Yoyo.Runtime
 	[RequireComponent(typeof(NetworkIdentifier))]
     public abstract class NetworkBehaviour : MonoBehaviour
     {
-        private NetworkIdentifier _netId;
+        [SerializeField] private NetworkIdentifier _netId;
         private bool _dirty = false;
 
         public NetworkIdentifier NetId { get => _netId; private set => _netId = value; }
@@ -19,19 +19,25 @@ namespace Yoyo.Runtime
         public bool IsServer => NetId.Session.Environment == YoyoEnvironment.Server;
         public bool IsLocalPlayer => NetId.IsLocalPlayer;
 
-        private void Awake()
+        private void OnEnable() 
         {
-            NetId = gameObject.GetComponent<NetworkIdentifier>();
+            NetId.RegisterBehaviour(this);
+        }
+
+        private void OnDisable() 
+        {
+            NetId.UnregisterBehaviour(this);
+        }
+
+        private IEnumerator Start() 
+        {
             if(NetId == null)
             {
                 throw new System.Exception("ERROR: There is no network ID on this object");
             }
-            StartCoroutine(SlowStart());
-        }
 
-        private IEnumerator SlowStart()
-        {
             yield return new WaitUntil(() => NetId.IsInitialized);
+
             StartCoroutine(SlowUpdate());
         }
 
