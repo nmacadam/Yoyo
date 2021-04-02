@@ -172,7 +172,7 @@ namespace Yoyo.Runtime
                 {
                     if (type != -1)
                     {
-                        temp = GameObject.Instantiate(SpawnPrefab[type], initPos, rotation);
+                        temp = GameObject.Instantiate(ContractPrefabs[type], initPos, rotation);
                     }
                     else
                     {

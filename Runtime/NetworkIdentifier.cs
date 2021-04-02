@@ -79,9 +79,9 @@ namespace Yoyo.Runtime
             {
                 //We need to add ourselves to the networked object dictionary
                 Type = -1;
-                for (int i = 0; i < Session.SpawnPrefab.Length; i++)
+                for (int i = 0; i < Session.ContractPrefabs.Length; i++)
                 {
-                    if (Session.SpawnPrefab[i].gameObject.name == this.gameObject.name.Split('(')[0].Trim())
+                    if (Session.ContractPrefabs[i].gameObject.name == this.gameObject.name.Split('(')[0].Trim())
                     {
                         Type = i;              
                         break;

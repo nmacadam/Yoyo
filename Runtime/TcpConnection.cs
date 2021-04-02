@@ -186,7 +186,7 @@ namespace Yoyo.Runtime
                                 GameObject Temp;
                                 if (type != -1)
                                 {
-                                    Temp = GameObject.Instantiate(Session.SpawnPrefab[int.Parse(arg[1])], pos, qtemp);
+                                    Temp = GameObject.Instantiate(Session.ContractPrefabs[int.Parse(arg[1])], pos, qtemp);
                                 }
                                 else
                                 {
