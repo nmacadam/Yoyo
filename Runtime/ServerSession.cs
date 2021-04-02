@@ -119,7 +119,7 @@ namespace Yoyo.Runtime
 			session.StartCoroutine(session.Connections[session.ConCounter - 1].TCPRecv());
 
 			//Udpate all current network objects
-            foreach (KeyValuePair<int,NetworkIdentifier> entry in session.NetObjs)
+            foreach (KeyValuePair<int,NetworkIdentifier> entry in session.NetObjects)
             {//This will create a custom create string for each existing object in the game.
                 string tempRot = entry.Value.transform.rotation.ToString();
                 tempRot = tempRot.Replace(',', '#');
