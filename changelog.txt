@@ -15,6 +15,7 @@
 + Moved server specific code to ServerSession script
 + Moved client specific code to ClientSession script
 + Made Unity MonoBehaviour functions private
++ Replaced listener socket coroutine(s) with async callback loop
 
 - TcpConnection - 
 + Renamed NetworkConnection to TcpConnection
