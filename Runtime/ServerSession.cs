@@ -78,7 +78,7 @@ namespace Yoyo.Runtime
                 StartCoroutine(Connections[ConCounter - 1].TCPRecv());
 
                 //Udpate all current network objects
-                foreach (KeyValuePair<int,NetworkIdentifier> entry in NetObjs)
+                foreach (KeyValuePair<int,NetworkIdentifier> entry in NetObjects)
                 {//This will create a custom create string for each existing object in the game.
                     string tempRot = entry.Value.transform.rotation.ToString();
                     tempRot = tempRot.Replace(',', '#');
@@ -142,7 +142,7 @@ namespace Yoyo.Runtime
                     temp.GetComponent<NetworkIdentifier>().Owner = ownMe;
                     temp.GetComponent<NetworkIdentifier>().Identifier = ObjectCounter;
                     temp.GetComponent<NetworkIdentifier>().Type = type;
-                    NetObjs[ObjectCounter] = temp.GetComponent<NetworkIdentifier>();
+                    NetObjects[ObjectCounter] = temp.GetComponent<NetworkIdentifier>();
                     ObjectCounter++;
                     string MSG = "CREATE#" + type + "#" + ownMe +
                     "#" + (ObjectCounter - 1) + "#" + initPos.x.ToString("n2") + "#" +
@@ -171,10 +171,10 @@ namespace Yoyo.Runtime
         {
             try
             {
-                if (NetObjs.ContainsKey(netIDBad))
+                if (NetObjects.ContainsKey(netIDBad))
                 {
-                    Destroy(NetObjs[netIDBad].gameObject);
-                    NetObjs.Remove(netIDBad);
+                    Destroy(NetObjects[netIDBad].gameObject);
+                    NetObjects.Remove(netIDBad);
                 }
             }
             catch

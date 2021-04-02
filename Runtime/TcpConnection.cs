@@ -195,7 +195,7 @@ namespace Yoyo.Runtime
                                 Temp.GetComponent<NetworkIdentifier>().Owner = o;
                                 Temp.GetComponent<NetworkIdentifier>().Identifier = n;
                                 Temp.GetComponent<NetworkIdentifier>().Type = type;
-                                Session.NetObjs[n] = Temp.GetComponent<NetworkIdentifier>();
+                                Session.NetObjects[n] = Temp.GetComponent<NetworkIdentifier>();
                                 /*lock(MyCore._masterMessage)
                                 {   //Notify the server that we need to get update on this object.
                                     MyCore.MasterMessage += "DIRTY#" + n+"\n";
@@ -214,10 +214,10 @@ namespace Yoyo.Runtime
                             try
                             {
                                 string[] args = commands[i].Split('#');
-                                if (Session.NetObjs.ContainsKey(int.Parse(args[1])))
+                                if (Session.NetObjects.ContainsKey(int.Parse(args[1])))
                                 {
-                                    GameObject.Destroy(Session.NetObjs[int.Parse(args[1])].gameObject);
-                                    Session.NetObjs.Remove(int.Parse(args[1]));
+                                    GameObject.Destroy(Session.NetObjects[int.Parse(args[1])].gameObject);
+                                    Session.NetObjects.Remove(int.Parse(args[1]));
                                 }
 
                             }
@@ -232,9 +232,9 @@ namespace Yoyo.Runtime
                         if(Session.Environment == YoyoEnvironment.Server)
                         {
                             int id = int.Parse(commands[i].Split('#')[1]);
-                            if (Session.NetObjs.ContainsKey(id))
+                            if (Session.NetObjects.ContainsKey(id))
                             {
-                                foreach (NetworkBehaviour n in Session.NetObjs[id].gameObject.GetComponents<NetworkBehaviour>())
+                                foreach (NetworkBehaviour n in Session.NetObjects[id].gameObject.GetComponents<NetworkBehaviour>())
                                 {
                                     n.IsDirty = true;
                                 }
@@ -247,9 +247,9 @@ namespace Yoyo.Runtime
                         //string msg = "COMMAND#" + myId.netId + "#" + var + "#" + value;
                         string[] args = commands[i].Split('#');
                         int n = int.Parse(args[1]);
-                        if(Session.NetObjs.ContainsKey(n))
+                        if(Session.NetObjects.ContainsKey(n))
                         {
-                            Session.NetObjs[n].Net_Update(args[0], args[2], args[3]);
+                            Session.NetObjects[n].Net_Update(args[0], args[2], args[3]);
                         }
                     }
                 }

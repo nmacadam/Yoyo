@@ -41,7 +41,7 @@ namespace Yoyo.Runtime
         private bool _currentlyConnecting = false;
 
         public Dictionary<int, TcpConnection> Connections;
-        public Dictionary<int, NetworkIdentifier> NetObjs;
+        public Dictionary<int, NetworkIdentifier> NetObjects;
 
         //Game Object variables
         public int ObjectCounter = 0;
@@ -88,7 +88,7 @@ namespace Yoyo.Runtime
                 _port = 9001;
             }
             Connections = new Dictionary<int, TcpConnection>();
-            NetObjs = new Dictionary<int, NetworkIdentifier>();
+            NetObjects = new Dictionary<int, NetworkIdentifier>();
         }
 
         /// <summary>
@@ -118,11 +118,11 @@ namespace Yoyo.Runtime
                 _environment = YoyoEnvironment.None;
                 this.IsConnected = false;
                 this.LocalPlayerId = -10;
-                foreach (KeyValuePair<int, NetworkIdentifier> obj in NetObjs)
+                foreach (KeyValuePair<int, NetworkIdentifier> obj in NetObjects)
                 {
                     Destroy(obj.Value.gameObject);
                 }
-                NetObjs.Clear();
+                NetObjects.Clear();
                 Connections.Clear();              
             }
             if (Environment == YoyoEnvironment.Server)
@@ -161,7 +161,7 @@ namespace Yoyo.Runtime
             { 
                 //Remove Connection from server
                 List<int> badObjs = new List<int>();
-                foreach (KeyValuePair<int, NetworkIdentifier> obj in NetObjs)
+                foreach (KeyValuePair<int, NetworkIdentifier> obj in NetObjects)
                 {
                     if (obj.Value.Owner == badConnection)
                     {
@@ -224,7 +224,7 @@ namespace Yoyo.Runtime
                 _environment = YoyoEnvironment.None;
                 try
                 {
-                    foreach (KeyValuePair<int, NetworkIdentifier> obj in NetObjs)
+                    foreach (KeyValuePair<int, NetworkIdentifier> obj in NetObjects)
                     {
                         Destroy(obj.Value.gameObject);
                     }
@@ -251,7 +251,7 @@ namespace Yoyo.Runtime
                 CanJoin = true;
                 try
                 {
-                    NetObjs.Clear();
+                    NetObjects.Clear();
                     Connections.Clear();
                     StopCoroutine(ListeningThread);  
                     TCP_Listener.Close();
@@ -260,7 +260,7 @@ namespace Yoyo.Runtime
                 catch (System.NullReferenceException)
                 {
                     Debug.Log("Inside error.");
-                    NetObjs = new Dictionary<int, NetworkIdentifier>();
+                    NetObjects = new Dictionary<int, NetworkIdentifier>();
                     Connections = new Dictionary<int, TcpConnection>();
                 }              
             }
@@ -292,7 +292,7 @@ namespace Yoyo.Runtime
             {
                 //Compose Master Message
 
-                foreach(KeyValuePair<int, NetworkIdentifier> id in NetObjs)
+                foreach(KeyValuePair<int, NetworkIdentifier> id in NetObjects)
                 {
                     lock (_masterMessage)
                     {

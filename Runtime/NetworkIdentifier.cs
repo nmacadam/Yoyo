@@ -99,7 +99,7 @@ namespace Yoyo.Runtime
                         Identifier = Session.ObjectCounter;
                         Session.ObjectCounter++;
                         Owner = -1;
-                        Session.NetObjs.Add(Identifier, this);
+                        Session.NetObjects.Add(Identifier, this);
                     }
                 }
             }
