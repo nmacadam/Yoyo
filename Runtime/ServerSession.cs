@@ -13,7 +13,15 @@ namespace Yoyo.Runtime
 {
 	public partial class YoyoSession : MonoBehaviour
 	{
-        private Socket TCP_Listener;
+		private class ListenerSocketState
+		{
+			public YoyoSession Session;
+			public Socket WorkSocket;
+			public int MaxConnections;
+			//public Connections;
+		}
+
+        private Socket _tcpListener;
 
 		/// <summary>
         /// Server Functions
@@ -23,10 +31,35 @@ namespace Yoyo.Runtime
         /// </summary>
         public void StartServer()
         {
-            if (!IsConnected)
+			if (IsConnected) return;
+
+			//If we are listening then we are the server.
+            _environment = YoyoEnvironment.Server;
+            IsConnected = true;
+			LocalPlayerId = -1; //For server the localplayer id will be -1.
+
+			IPAddress ip = (IPAddress.Any);
+            IPEndPoint localEndPoint = new IPEndPoint(ip, _port);
+			Socket listener = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+			try
             {
-                ListeningThread = StartCoroutine(Listen());
-                StartCoroutine(SlowUpdate());
+                listener.Bind(localEndPoint);
+                listener.Listen(_maxConnections);
+
+                ListenerSocketState state = new ListenerSocketState();
+				state.Session = this;
+                state.WorkSocket = listener;
+                //state.Info = _info;
+                state.MaxConnections = _maxConnections;
+                //state.Connections = _connections;
+
+                listener.BeginAccept(AcceptCallback, state);
+           	 	StartCoroutine(SlowUpdate());
+            }
+            catch (Exception e)
+            {
+                Debug.Log("yoyo: failed to start server: " + e.ToString());
             }
         }
 
@@ -35,67 +68,139 @@ namespace Yoyo.Runtime
             if(Environment == YoyoEnvironment.Server && CanJoin)
             {   
                 CurrentlyConnecting = false;
-                StopCoroutine(ListeningThread);
-                TCP_Listener.Close();
+                //StopCoroutine(ListeningThread);
+                _tcpListener.Close();
             }
         }
 
-		public IEnumerator Listen()
+		/// <summary>
+        /// Called when a listener accepts a client
+        /// </summary>
+        private static void AcceptCallback(IAsyncResult ar)
         {
-            //If we are listening then we are the server.
-            _environment = YoyoEnvironment.Server;
-            IsConnected = true;
-            LocalPlayerId = -1; //For server the localplayer id will be -1.
-                                //Initialize port to listen to
-                                
-            IPAddress ip = (IPAddress.Any);
-            IPEndPoint endP = new IPEndPoint(ip, _port);
-            //We could do UDP in some cases but for now we will do TCP
-            TCP_Listener = new Socket(ip.AddressFamily,SocketType.Stream, ProtocolType.Tcp);
+			// Get the socket that handles the client request.
+            ListenerSocketState state = (ListenerSocketState)ar.AsyncState;
+            Socket listener = state.WorkSocket;
+            Socket handler = listener.EndAccept(ar);
+			YoyoSession session = state.Session;
 
-            //Now I have a socket listener.
-            TCP_Listener.Bind(endP);
-            TCP_Listener.Listen(_maxConnections);
+			// todo: this will permanently block new joins unless listen is called again...?
+			if (!state.Session.CanJoin)
+			{
+				return;
+			}
+			else
+			{
+				// Continue listener loop
+            	listener.BeginAccept(AcceptCallback, state);
+			}
 
-            while(CanJoin)
+			session.StartConnection = DateTime.Now;
+            TcpConnection temp = new TcpConnection(session.ConCounter, handler, session);
+            session.ConCounter++;
+            lock (session._conLock)
             {
-                CurrentlyConnecting = false;
-                
-                TCP_Listener.BeginAccept(new System.AsyncCallback(this.ListenCallBack), TCP_Listener);               
-                yield return new WaitUntil(() => CurrentlyConnecting);
-                DateTime time2 = DateTime.Now;
-                TimeSpan timeS = time2 - StartConnection;
-
-                CurrentlyConnecting = false;
-                if (Connections.ContainsKey(ConCounter - 1) == false)
-                {
-                    //Connection was not fully established.
-                    continue;
-                }
-                yield return new WaitForSeconds(2*(float)timeS.TotalSeconds);
-                Connections[ConCounter - 1].Send(Encoding.ASCII.GetBytes("PLAYERID#" + Connections[ConCounter - 1].PlayerId + "\n"));
-                //Start Server side listening for client messages.
-                StartCoroutine(Connections[ConCounter - 1].TCPRecv());
-
-                //Udpate all current network objects
-                foreach (KeyValuePair<int,NetworkIdentifier> entry in NetObjects)
-                {//This will create a custom create string for each existing object in the game.
-                    string tempRot = entry.Value.transform.rotation.ToString();
-                    tempRot = tempRot.Replace(',', '#');
-                    tempRot = tempRot.Replace('(', '#');
-                    tempRot = tempRot.Replace(')', '\0');            
-
-                    string MSG = "CREATE#" + entry.Value.Type + "#" + entry.Value.Owner +
-                   "#" + entry.Value.Identifier + "#" + entry.Value.transform.position.x.ToString("n2") + 
-                   "#" + entry.Value.transform.position.y.ToString("n2") + "#" 
-                   + entry.Value.transform.position.z.ToString("n2") + tempRot+"\n";
-                    Connections[ConCounter - 1].Send(Encoding.ASCII.GetBytes(MSG));
-                }
-                //Create NetworkPlayerManager
-                NetCreateObject(-1, ConCounter - 1, new Vector3(Connections[ConCounter -1].PlayerId*2-3,0,0));
-                yield return new WaitForSeconds(.1f);
+                session.Connections.Add(temp.PlayerId, temp);
             }
+            session.CurrentlyConnecting = true;
+
+			//CurrentlyConnecting = false;
+            if (!session.Connections.ContainsKey(session.ConCounter - 1))
+            {
+                //Connection was not fully established.
+				// todo: handle
+				return;
+            }
+
+			// there was a waitforseconds here, not sure why
+
+			session.Connections[session.ConCounter - 1].Send(Encoding.ASCII.GetBytes("PLAYERID#" + session.Connections[session.ConCounter - 1].PlayerId + "\n"));
+			// todo: start receive
+			session.StartCoroutine(session.Connections[session.ConCounter - 1].TCPRecv());
+
+			//Udpate all current network objects
+            foreach (KeyValuePair<int,NetworkIdentifier> entry in session.NetObjs)
+            {//This will create a custom create string for each existing object in the game.
+                string tempRot = entry.Value.transform.rotation.ToString();
+                tempRot = tempRot.Replace(',', '#');
+                tempRot = tempRot.Replace('(', '#');
+                tempRot = tempRot.Replace(')', '\0');            
+
+                string MSG = "CREATE#" + entry.Value.Type + "#" + entry.Value.Owner +
+               "#" + entry.Value.Identifier + "#" + entry.Value.transform.position.x.ToString("n2") + 
+               "#" + entry.Value.transform.position.y.ToString("n2") + "#" 
+               + entry.Value.transform.position.z.ToString("n2") + tempRot+"\n";
+                session.Connections[session.ConCounter - 1].Send(Encoding.ASCII.GetBytes(MSG));
+            }
+
+            //Create NetworkPlayerManager
+            session.NetCreateObject(-1, session.ConCounter - 1, new Vector3(session.Connections[session.ConCounter -1].PlayerId*2-3,0,0));
         }
+
+
+
+
+
+
+
+
+		// public IEnumerator Listen()
+        // {
+        //     //If we are listening then we are the server.
+        //     _environment = YoyoEnvironment.Server;
+        //     IsConnected = true;
+        //     LocalPlayerId = -1; //For server the localplayer id will be -1.
+        //                         //Initialize port to listen to
+                                
+        //     IPAddress ip = (IPAddress.Any);
+        //     IPEndPoint endP = new IPEndPoint(ip, _port);
+        //     //We could do UDP in some cases but for now we will do TCP
+        //     _tcpListener = new Socket(ip.AddressFamily,SocketType.Stream, ProtocolType.Tcp);
+
+        //     //Now I have a socket listener.
+        //     _tcpListener.Bind(endP);
+        //     _tcpListener.Listen(_maxConnections);
+
+        //     while(CanJoin)
+        //     {
+        //         CurrentlyConnecting = false;
+                
+        //         _tcpListener.BeginAccept(new System.AsyncCallback(this.ListenCallBack), _tcpListener);               
+        //         yield return new WaitUntil(() => CurrentlyConnecting);
+        //         DateTime time2 = DateTime.Now;
+        //         TimeSpan timeS = time2 - StartConnection;
+
+        //         CurrentlyConnecting = false;
+        //         if (Connections.ContainsKey(ConCounter - 1) == false)
+        //         {
+        //             //Connection was not fully established.
+        //             continue;
+        //         }
+        //         yield return new WaitForSeconds(2*(float)timeS.TotalSeconds);
+        //         Connections[ConCounter - 1].Send(Encoding.ASCII.GetBytes("PLAYERID#" + Connections[ConCounter - 1].PlayerId + "\n"));
+        //         //Start Server side listening for client messages.
+        //         StartCoroutine(Connections[ConCounter - 1].TCPRecv());
+
+        //         //Udpate all current network objects
+        //         foreach (KeyValuePair<int,NetworkIdentifier> entry in NetObjs)
+        //         {//This will create a custom create string for each existing object in the game.
+        //             string tempRot = entry.Value.transform.rotation.ToString();
+        //             tempRot = tempRot.Replace(',', '#');
+        //             tempRot = tempRot.Replace('(', '#');
+        //             tempRot = tempRot.Replace(')', '\0');            
+
+        //             string MSG = "CREATE#" + entry.Value.Type + "#" + entry.Value.Owner +
+        //            "#" + entry.Value.Identifier + "#" + entry.Value.transform.position.x.ToString("n2") + 
+        //            "#" + entry.Value.transform.position.y.ToString("n2") + "#" 
+        //            + entry.Value.transform.position.z.ToString("n2") + tempRot+"\n";
+        //             Connections[ConCounter - 1].Send(Encoding.ASCII.GetBytes(MSG));
+        //         }
+        //         //Create NetworkPlayerManager
+        //         NetCreateObject(-1, ConCounter - 1, new Vector3(Connections[ConCounter -1].PlayerId*2-3,0,0));
+        //         yield return new WaitForSeconds(.1f);
+        //     }
+        // }
+
         public void ListenCallBack(System.IAsyncResult ar)
         {
             StartConnection = DateTime.Now;
