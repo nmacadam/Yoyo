@@ -1,0 +1,16 @@
+{
+  "name": "com.daruma-works.yoyo",
+  "version": "1.0.0-preview",
+  "displayName": "Yoyo",
+  "description": "An experimental networking engine for Unity",
+  "unity": "2019.4",
+  "keywords": [
+    "networking",
+    "scripts",
+    "multiplayer"
+  ],
+  "author": {
+    "name": "Nathan MacAdam",
+    "url": "https://www.nathanmacadam.dev"
+  }
+}
