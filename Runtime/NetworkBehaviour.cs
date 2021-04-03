@@ -34,27 +34,45 @@ namespace Yoyo.Runtime
 
         public void SendCommand(string var, string value)
         {
+            // ! this will probably break
             var = var.Replace('#', ' ');
             var = var.Replace('\n', ' ');
             value = value.Replace('#', ' ');
             value = value.Replace('\n', ' ');
-            if (NetId.Session != null && IsClient && IsLocalPlayer && NetId.GameObjectMessages.Contains(var) == false)
+
+            // ! might also break
+            if (NetId.Session != null && IsClient && IsLocalPlayer)// && NetId.GameObjectMessages.Contains(var) == false)
             {
-                string msg = "COMMAND#" + NetId.Identifier + "#" + var + "#" + value;
-                NetId.AddMsg(msg);
+                // string msg = "COMMAND#" + NetId.Identifier + "#" + var + "#" + value;
+                // NetId.AddMsg(msg);
+                Packet packet = new Packet(0, (uint)PacketType.Command);
+                packet.Write(NetId.Identifier);
+                packet.Write(var);
+                packet.Write(value);
+
+                NetId.AddMsg(packet);
             }
         }
 
         public void SendUpdate(string var, string value)
         {
+            // ! this will probably break
             var = var.Replace('#', ' ');
             var = var.Replace('\n', ' ');
             value = value.Replace('#', ' ');
             value = value.Replace('\n', ' ');
-            if (NetId.Session != null && IsServer && NetId.GameObjectMessages.Contains(var)==false)
+
+            // ! might also break
+            if (NetId.Session != null && IsServer)// && NetId.GameObjectMessages.Contains(var)==false)
             {
-                string msg = "UPDATE#" + NetId.Identifier + "#" + var + "#" + value;
-                NetId.AddMsg(msg);
+                // string msg = "UPDATE#" + NetId.Identifier + "#" + var + "#" + value;
+                // NetId.AddMsg(msg);
+                Packet packet = new Packet(0, (uint)PacketType.Update);
+                packet.Write(NetId.Identifier);
+                packet.Write(var);
+                packet.Write(value);
+                
+                NetId.AddMsg(packet);
             }
         }
 

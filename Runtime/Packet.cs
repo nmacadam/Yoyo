@@ -10,11 +10,14 @@ namespace Yoyo.Runtime
 {
 	public enum PacketType
 	{
-		PlayerId = 0x0,
-		Create = 0x1,
-		Destroy = 0x2,
-		Dirty = 0x3,
-		Disconnect = 0x4,
+		Empty = 0x0,
+		PlayerId = 0x1,
+		Create = 0x2,
+		Destroy = 0x3,
+		Dirty = 0x4,
+		Disconnect = 0x5,
+		Command = 0x6,
+		Update = 0x7,
 	}
 	
 	public struct PacketHeader

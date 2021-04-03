@@ -49,7 +49,7 @@ namespace Yoyo.Runtime
         private Dictionary<int, NetworkIdentifier> _netObjects;
         private int _netObjectCount = 0;
         private int _connectionCount = 0;
-        
+
         public GameObject[] ContractPrefabs => _contractPrefabs;
         public GameObject NetworkPlayerManager => _networkPlayerManager;
 
@@ -66,7 +66,8 @@ namespace Yoyo.Runtime
 
         //WE are going to push a variable to notify the master an ID has a message.
         public bool MessageWaiting { get; set; }
-        public string MasterMessage { get; set; }
+        //public string MasterMessage { get; set; }
+        public Queue<Packet> MasterPacket = new Queue<Packet>();
 
         // Locks
         public object ObjLock = new object();
@@ -192,10 +193,15 @@ namespace Yoyo.Runtime
                         Debug.Log("Sending Disconnect!");
                         Connections[0].IsDisconnecting = true;
 
-                        Connections[0].Send(Encoding.ASCII.
-                                            GetBytes(
-                                            "DISCON#" + Connections[0].PlayerId.ToString() + "\n")
-                                            );
+                        Packet disconnectPacket = new Packet(0, (uint)PacketType.Disconnect);
+                        disconnectPacket.Write(Connections[0].PlayerId);
+
+                        Connections[0].Send(disconnectPacket);
+
+                        // Connections[0].Send(Encoding.ASCII.
+                        //                     GetBytes(
+                        //                     "DISCON#" + Connections[0].PlayerId.ToString() + "\n")
+                        //                     );
 
                     }
                 }
@@ -215,10 +221,15 @@ namespace Yoyo.Runtime
                     {
                         lock (_conLock)
                         {
-                            Connections[obj.Key].Send(Encoding.ASCII.
-                                             GetBytes(
-                                             "DISCON#-1\n")
-                                             );
+                            Packet disconnectPacket = new Packet(0, (uint)PacketType.Disconnect);
+                            disconnectPacket.Write(-1);
+                            
+                            Connections[obj.Key].Send(disconnectPacket);
+
+                            // Connections[obj.Key].Send(Encoding.ASCII.
+                            //                  GetBytes(
+                            //                  "DISCON#-1\n")
+                            //                  );
                             Connections[obj.Key].IsDisconnecting = true;
                         }
                     }
@@ -283,6 +294,11 @@ namespace Yoyo.Runtime
             LeaveGame();
         }
 
+        public void Update()
+        {
+            ThreadManager.UpdateMain();
+        }
+
         /// <summary>
         /// Support functions
         /// Slow Update()
@@ -302,9 +318,14 @@ namespace Yoyo.Runtime
                         //Add their message to the masterMessage (the one we send)
                         lock (id.Value._lock)
                         {
-                            MasterMessage += id.Value.GameObjectMessages + "\n";
+                            //MasterMessage += id.Value.GameObjectMessages + "\n";
+                            foreach (var packet in id.Value.GameObjectPackets)
+                            {
+                                MasterPacket.Enqueue(packet);
+                            }
                             //Clear Game Objects messages.
-                            id.Value.GameObjectMessages = "";
+                            //id.Value.GameObjectMessages = "";
+                            id.Value.GameObjectPackets.Clear();
                         }
 
                     }
@@ -313,14 +334,20 @@ namespace Yoyo.Runtime
 
                 //Send Master Message
                 List<int> bad = new List<int>();
-                if(MasterMessage != "")
+                //if(MasterMessage != "")
+                if(MasterPacket.Count != 0)
                 {
                     foreach(KeyValuePair<int,TcpConnection> item in Connections)
                     {
                         try
                         {
                             //This will send all of the information to the client (or to the server if on a client).
-                            item.Value.Send(Encoding.ASCII.GetBytes(MasterMessage));
+                            //item.Value.Send(Encoding.ASCII.GetBytes(MasterMessage));
+                            foreach (var packet in MasterPacket)
+                            {
+                                Debug.Log("yoyo - sent packet in master packet");
+                                item.Value.Send(packet);
+                            }
                         }
                         catch
                         {
@@ -329,7 +356,8 @@ namespace Yoyo.Runtime
                     }
                     lock(_masterMessage)
                     {
-                        MasterMessage = "";//delete old values.
+                        //MasterMessage = "";//delete old values.
+                        MasterPacket.Clear();
                         
                     }
                     lock (_conLock)
@@ -344,7 +372,8 @@ namespace Yoyo.Runtime
                 {
                     MessageWaiting = false;
                 }
-                while(!MessageWaiting && MasterMessage == "")
+                //while(!MessageWaiting && MasterMessage == "")
+                while(!MessageWaiting && MasterPacket.Count == 0)
                 {
                     yield return new WaitForSeconds(MasterTimer);//
                 }

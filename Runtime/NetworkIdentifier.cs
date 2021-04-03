@@ -19,7 +19,9 @@ namespace Yoyo.Runtime
 
         [Header("GameObject Info")]
 		public int Type;
-        public string GameObjectMessages = "";
+
+        //public string GameObjectMessages = "";
+        public Queue<Packet> GameObjectPackets = new Queue<Packet>();
 
         private YoyoSession _session;
         private List<NetworkBehaviour> _networkBehaviours = new List<NetworkBehaviour>();
@@ -113,13 +115,15 @@ namespace Yoyo.Runtime
             }
         }
 
-        public void AddMsg(string msg)
+        //public void AddMsg(string msg)
+        public void AddMsg(Packet packet)
         {
             //Debug.Log("Message WAS: " + gameObjectMessages);
             //May need to put race condition blocks here.
             lock (_lock)
             {
-                GameObjectMessages += (msg + "\n");
+                //GameObjectMessages += (msg + "\n");
+                GameObjectPackets.Enqueue(packet);
                 lock (Session.WaitingLock)
                 {
                     Session.MessageWaiting = true;
@@ -128,7 +132,7 @@ namespace Yoyo.Runtime
             //Debug.Log("Message IS NOW: " + gameObjectMessages);
         }
 
-        public void Net_Update(string type, string var, string value)
+        public void Net_Update(PacketType type, string var, string value)
         {
             //Get components for network behaviours
             //Destroy self if owner connection is done.
@@ -149,8 +153,8 @@ namespace Yoyo.Runtime
                 {
                     Session = GameObject.FindObjectOfType<YoyoSession>();
                 }
-                if ((Session.Environment == YoyoEnvironment.Server && type == "COMMAND")
-                    || (Session.Environment == YoyoEnvironment.Client && type == "UPDATE"))
+                if ((Session.Environment == YoyoEnvironment.Server && type == PacketType.Command)
+                    || (Session.Environment == YoyoEnvironment.Client && type == PacketType.Update))
                     {
                         //NetworkBehaviour[] myNets = gameObject.GetComponents<NetworkBehaviour>();
                         for (int i = 0; i < _networkBehaviours.Count; i++)
@@ -169,7 +173,10 @@ namespace Yoyo.Runtime
 
         public void NotifyDirty()
         {
-            this.AddMsg("DIRTY#" + Identifier);
+            Packet packet = new Packet(0, (uint)PacketType.Dirty);
+            packet.Write(Identifier);
+            //this.AddMsg("DIRTY#" + Identifier);
+            this.AddMsg(packet);
         }
 	}
 }
