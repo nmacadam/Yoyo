@@ -63,8 +63,9 @@ namespace Yoyo.Runtime
                 TCPCon.BeginSend(packet.ToArray(), 0, packet.Length(), 0, new System.AsyncCallback(this.SendCallback), TCPCon);
                 _tcpIsSending = true;
             }
-            catch
+            catch (Exception e)
             {
+                Debug.Log("yoyo - encountered error when sending packet: " + e.ToString());
                 DidDisconnect = true;
                 //Can only happen when the server is pulled offline unexpectedly.
                 _tcpIsSending = false;
@@ -90,7 +91,14 @@ namespace Yoyo.Runtime
         public void BeginReceive()
         {
             Debug.Log("yoyo - socket is ready to receive packets");
-            TCPCon.BeginReceive(_buffer, 0, DataBufferSize, 0, TCPRecvCallback, this);
+            try
+            {
+                TCPCon.BeginReceive(_buffer, 0, DataBufferSize, 0, TCPRecvCallback, this);
+            }
+            catch (Exception e)
+            {
+                Debug.Log("yoyo - error: " + e.ToString());
+            }
         }
 
         /// <summary>
@@ -642,11 +650,12 @@ namespace Yoyo.Runtime
             // ! might need this
             //int type = packet.ReadInt();
             int netId = packet.ReadInt();
-            string flag = packet.ReadString();
-            string value = packet.ReadString();
+            //string flag = packet.ReadString();
+            //string value = packet.ReadString();
             if(Session.NetObjects.ContainsKey(netId))
             {
-                Session.NetObjects[netId].Net_Update(type, flag, value);
+                //Session.NetObjects[netId].Net_Update(type, flag, value);
+                Session.NetObjects[netId].Net_Update(type, packet);
             }
         }
 	}

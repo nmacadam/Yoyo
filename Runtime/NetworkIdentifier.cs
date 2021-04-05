@@ -132,7 +132,8 @@ namespace Yoyo.Runtime
             //Debug.Log("Message IS NOW: " + gameObjectMessages);
         }
 
-        public void Net_Update(PacketType type, string var, string value)
+        //public void Net_Update(PacketType type, string var, string value)
+        public void Net_Update(PacketType type, Packet packet)
         {
             //Get components for network behaviours
             //Destroy self if owner connection is done.
@@ -159,7 +160,9 @@ namespace Yoyo.Runtime
                         //NetworkBehaviour[] myNets = gameObject.GetComponents<NetworkBehaviour>();
                         for (int i = 0; i < _networkBehaviours.Count; i++)
                         {
-                            _networkBehaviours[i].HandleMessage(var, value);
+                            // ! this will break for more than one read
+                            //_networkBehaviours[i].HandleMessage(var, value);
+                            _networkBehaviours[i].HandleMessage(new Packet(packet));
                         }
                     }
             }

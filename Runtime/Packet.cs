@@ -57,6 +57,19 @@ namespace Yoyo.Runtime
             SetBytes(buffer);
         }
 
+        public Packet(Packet packet)
+        {
+            // ! might need to do an actual copy
+            // _buffer = new List<byte>(packet._buffer);
+            // _readableBuffer = new byte[packet._readableBuffer.Length];
+            // Array.Copy(packet._readableBuffer, _readableBuffer, packet._readableBuffer.Length);
+            // _index = packet._index;
+            
+            _buffer = new List<byte>();
+            SetBytes(packet.ToArray());
+            _index = packet._index;
+        }
+
         public void WriteHeader(uint sequence, uint packetType)
         {
             Write(YoyoVersionInfo.ProtocolId);
@@ -218,11 +231,25 @@ namespace Yoyo.Runtime
             _buffer.AddRange(Encoding.ASCII.GetBytes(_value)); // Add the string itself
         }
 
+        public void Write(Vector2 value)
+        {
+            Write(value.x);
+            Write(value.y);
+        }
+
         public void Write(Vector3 value)
         {
             Write(value.x);
             Write(value.y);
             Write(value.z);
+        }
+
+        public void Write(Vector4 value)
+        {
+            Write(value.x);
+            Write(value.y);
+            Write(value.z);
+            Write(value.w);
         }
 
         public void Write(Quaternion value)
@@ -231,6 +258,14 @@ namespace Yoyo.Runtime
             Write(value.y);
             Write(value.z);
             Write(value.w);
+        }
+
+        public void Write(Color value)
+        {
+            Write(value.r);
+            Write(value.g);
+            Write(value.b);
+            Write(value.a);
         }
 
         #endregion
@@ -427,14 +462,29 @@ namespace Yoyo.Runtime
             }
         }
 
+        public Vector2 ReadVector2(bool moveReadPos = true)
+        {
+            return new Vector2(ReadFloat(moveReadPos), ReadFloat(moveReadPos));
+        }
+
         public Vector3 ReadVector3(bool moveReadPos = true)
         {
             return new Vector3(ReadFloat(moveReadPos), ReadFloat(moveReadPos), ReadFloat(moveReadPos));
         }
 
+        public Vector4 ReadVector4(bool moveReadPos = true)
+        {
+            return new Vector4(ReadFloat(moveReadPos), ReadFloat(moveReadPos), ReadFloat(moveReadPos), ReadFloat(moveReadPos));
+        }
+
         public Quaternion ReadQuaternion(bool moveReadPos = true)
         {
             return new Quaternion(ReadFloat(moveReadPos), ReadFloat(moveReadPos), ReadFloat(moveReadPos), ReadFloat(moveReadPos));
+        }
+
+        public Color ReadColor(bool moveReadPos = true)
+        {
+            return new Color(ReadFloat(moveReadPos), ReadFloat(moveReadPos), ReadFloat(moveReadPos), ReadFloat(moveReadPos));
         }
 
         #endregion

@@ -21,6 +21,8 @@ namespace Yoyo.Runtime
 			//public Connections;
 		}
 
+        private object _sendLock = new object();
+
         private Socket _tcpListener;
 
 		/// <summary>
@@ -87,6 +89,7 @@ namespace Yoyo.Runtime
 			YoyoSession session = state.Session;
 
             Debug.Log("yoyo - incoming connection...");
+            session.CurrentlyConnecting = true;
 
 			// todo: this will permanently block new joins unless listen is called again...?
 			if (!state.Session.CanJoin)
@@ -105,13 +108,14 @@ namespace Yoyo.Runtime
             {
                 session.Connections.Add(temp.PlayerId, temp);
             }
-            session.CurrentlyConnecting = true;
 
 			//CurrentlyConnecting = false;
             if (!session.Connections.ContainsKey(session.ConnectionCount - 1))
             {
                 //Connection was not fully established.
 				// todo: handle
+                Debug.Log("yoyo - connection was not fully established");
+                session.CurrentlyConnecting = false;
 				return;
             }
 
@@ -128,6 +132,8 @@ namespace Yoyo.Runtime
             session.Connections[session.ConnectionCount - 1].BeginReceive();
             //ThreadManager.ExecuteOnMainThread(() => session.StartCoroutine(session.Connections[session.ConnectionCount - 1].TCPRecv()));
 
+            Debug.Log("b");
+
 			//Udpate all current network objects
             foreach (KeyValuePair<int,NetworkIdentifier> entry in session.NetObjects)
             {//This will create a custom create string for each existing object in the game.
@@ -141,21 +147,30 @@ namespace Yoyo.Runtime
             //    + entry.Value.transform.position.z.ToString("n2") + tempRot+"\n";
             //     session.Connections[session.ConnectionCount - 1].Send(Encoding.ASCII.GetBytes(MSG));
 
-                Packet createPacket = new Packet(0, (uint)PacketType.Create);
-                createPacket.Write(entry.Value.Type);
-                createPacket.Write(entry.Value.Owner);
-                createPacket.Write(entry.Value.Identifier);
-                createPacket.Write(entry.Value.transform.position);
-                createPacket.Write(entry.Value.transform.rotation);
-                session.Connections[session.ConnectionCount - 1].Send(createPacket);
+                // ! causes issues
+                lock (session._sendLock)
+                {
+                    Packet createPacket = new Packet(0, (uint)PacketType.Create);
 
-                Debug.Log("yoyo - sent packet creating object type " + entry.Value.Type);
+                    createPacket.Write(entry.Value.Type);
+                    createPacket.Write(entry.Value.Owner);
+                    createPacket.Write(entry.Value.Identifier);
+                    //createPacket.Write(entry.Value.transform.position);
+                    createPacket.Write(Vector3.zero);
+                    //createPacket.Write(entry.Value.transform.rotation);
+                    createPacket.Write(Quaternion.identity);
+
+                    session.Connections[session.ConnectionCount - 1].Send(createPacket);
+
+                    Debug.Log("yoyo - sent packet creating object type " + entry.Value.Type);
+                }
             }
 
             Debug.Log("yoyo - sending packet to create network player manager");
 
             //Create NetworkPlayerManager
             ThreadManager.ExecuteOnMainThread(() => session.NetCreateObject(-1, session.ConnectionCount - 1, new Vector3(session.Connections[session.ConnectionCount -1].PlayerId*2-3,0,0)));
+            session.CurrentlyConnecting = false;
         }
 
         public void ListenCallBack(System.IAsyncResult ar)
