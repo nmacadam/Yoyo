@@ -9,15 +9,23 @@ using UnityEngine;
 
 namespace Yoyo.Runtime
 {
+    public struct SocketParameters
+    {
+        public int BufferSize;
+        public bool NoDelay;
+    }
+
 	public class TcpConnection
 	{
         private int _playerId;
         private Socket _socket;
         private YoyoSession _session;
 
-        public const int DataBufferSize = 2048;
+        //public const int DataBufferSize = 2048;
 
-        private byte[] _buffer = new byte[DataBufferSize];
+        private readonly int _dataBufferSize;
+
+        private byte[] _buffer;// = new byte[DataBufferSize];
         private Packet receivedData = new Packet();
 
         //private int _bytesReceived = 0;
@@ -35,11 +43,19 @@ namespace Yoyo.Runtime
         public bool IsDisconnecting { get => _isDisconnecting; set => _isDisconnecting = value; }
         public bool DidDisconnect { get => _didDisconnect; set => _didDisconnect = value; }
 
-        public TcpConnection(int playerId, Socket socket, YoyoSession session)
+        public TcpConnection(SocketParameters parameters, int playerId, Socket socket, YoyoSession session)
         {
             _playerId = playerId;
             _socket = socket;
             _session = session;
+
+            _dataBufferSize = parameters.BufferSize;
+            _buffer = new byte[_dataBufferSize];
+
+            _socket.ReceiveBufferSize = _dataBufferSize;
+            _socket.SendBufferSize = _dataBufferSize;
+
+            _socket.NoDelay = parameters.NoDelay;
 
             //_socket.ReceiveBufferSize = DataBufferSize;
             //_socket.SendBufferSize = DataBufferSize;
@@ -95,7 +111,7 @@ namespace Yoyo.Runtime
             Debug.Log("yoyo - socket is ready to receive packets");
             try
             {
-                TCPCon.BeginReceive(_buffer, 0, DataBufferSize, 0, TCPRecvCallback, this);
+                TCPCon.BeginReceive(_buffer, 0, _dataBufferSize, 0, TCPRecvCallback, this);
             }
             catch (Exception e)
             {
@@ -119,7 +135,7 @@ namespace Yoyo.Runtime
                 {
                     try
                     {
-                        TCPCon.BeginReceive(_buffer, 0, DataBufferSize, 0, new System.AsyncCallback(TCPRecvCallback), this);
+                        TCPCon.BeginReceive(_buffer, 0, _dataBufferSize, 0, new System.AsyncCallback(TCPRecvCallback), this);
                         IsRecv = true;
                         break;
                     }
@@ -355,7 +371,7 @@ namespace Yoyo.Runtime
                 Array.Copy(_buffer, data, byteLength);
 
                 receivedData.Reset(HandleData(data));
-                TCPCon.BeginReceive(_buffer, 0, DataBufferSize, 0, TCPRecvCallback, this);
+                TCPCon.BeginReceive(_buffer, 0, _dataBufferSize, 0, TCPRecvCallback, this);
 
                 // if (byteLength > 0)
                 // {

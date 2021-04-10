@@ -32,11 +32,11 @@ namespace Yoyo.Runtime
         [Tooltip("How often will the server netcode update?")]
         public float MasterTimer = .05f;
 
-        // [Header("Socket Options")]
-        // [Tooltip("What is the packet buffer size for the socket?")]
-        // [SerializeField, NumberDropdown(512, 1024, 2048, 4096, 8192)] private int _bufferSize = 1024;
-        // [Tooltip("Should the socket use Nagle's Algorithm?")]
-        // [SerializeField] private bool _sendImmediate = false;
+        [Header("Socket Options")]
+        [Tooltip("What is the packet buffer size for the socket?")]
+        [SerializeField, NumberDropdown(512, 1024, 2048, 4096, 8192)] private int _bufferSize = 1024;
+        [Tooltip("Should the socket use Nagle's Algorithm?")]
+        [SerializeField] private bool _noDelay = false;
         
         [Header("Session State")]
         [Tooltip("Is this Yoyo Session representing a client or server?")]
@@ -61,6 +61,8 @@ namespace Yoyo.Runtime
         private int _netObjectCount = 0;
         private int _connectionCount = 0;
 
+        private SocketParameters _tcpParameters;
+
         public GameObject[] ContractPrefabs => _contractPrefabs;
         public GameObject NetworkPlayerManager => _networkPlayerManager;
 
@@ -74,6 +76,8 @@ namespace Yoyo.Runtime
         public Dictionary<int, NetworkIdentifier> NetObjects { get => _netObjects; private set => _netObjects = value; }
         public int NetObjectCount { get => _netObjectCount; set => _netObjectCount = value; }
         public int ConnectionCount { get => _connectionCount; set => _connectionCount = value; }
+
+        public SocketParameters TcpParameters => _tcpParameters;
 
         //WE are going to push a variable to notify the master an ID has a message.
         public bool MessageWaiting { get; set; }
@@ -89,6 +93,13 @@ namespace Yoyo.Runtime
         private void Start()
         {
             _environment = YoyoEnvironment.None;
+
+            _tcpParameters = new SocketParameters() 
+            {
+                BufferSize = _bufferSize,
+                NoDelay = _noDelay
+            };
+            
             IsConnected = false;
             CurrentlyConnecting = false;
             //ipAddress = "127.0.0.1";//Local host
@@ -300,12 +311,12 @@ namespace Yoyo.Runtime
             yield return new WaitForSeconds(.1f);
         }
 
-        public void OnApplicationQuit()
+        private void OnApplicationQuit()
         {
             LeaveGame();
         }
 
-        public void Update()
+        private void Update()
         //public void LateUpdate()
         {
             ThreadManager.UpdateMain();

@@ -102,7 +102,7 @@ namespace Yoyo.Runtime
             	listener.BeginAccept(AcceptCallback, state);
 			}
 
-            TcpConnection temp = new TcpConnection(session.ConnectionCount, handler, session);
+            TcpConnection temp = new TcpConnection(session.TcpParameters, session.ConnectionCount, handler, session);
             session.ConnectionCount++;
             lock (session._conLock)
             {
@@ -178,7 +178,7 @@ namespace Yoyo.Runtime
         {
             Socket listener = (Socket)ar.AsyncState;
             Socket handler = listener.EndAccept(ar);
-            TcpConnection temp = new TcpConnection(ConnectionCount, handler, this);
+            TcpConnection temp = new TcpConnection(_tcpParameters, ConnectionCount, handler, this);
             ConnectionCount++;
             lock (_conLock)
             {
