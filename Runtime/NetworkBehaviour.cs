@@ -6,18 +6,17 @@ using UnityEngine;
 
 namespace Yoyo.Runtime
 {
-	[RequireComponent(typeof(NetworkEntity))]
     public abstract class NetworkBehaviour : MonoBehaviour
     {
-        [SerializeField] private NetworkEntity _netId;
+        [SerializeField] private NetworkEntity _entity;
         private bool _dirty = false;
 
-        public NetworkEntity NetId { get => _netId; private set => _netId = value; }
+        public NetworkEntity Entity { get => _entity; private set => _entity = value; }
         public bool IsDirty { get => _dirty; set => _dirty = value; }
 
-        public bool IsClient => NetId.Session.Environment == YoyoEnvironment.Client;
-        public bool IsServer => NetId.Session.Environment == YoyoEnvironment.Server;
-        public bool IsLocalPlayer => NetId.IsLocalPlayer;
+        public bool IsClient => Entity.Session.Environment == YoyoEnvironment.Client;
+        public bool IsServer => Entity.Session.Environment == YoyoEnvironment.Server;
+        public bool IsLocalPlayer => Entity.IsLocalPlayer;
 
         public abstract void HandleMessage(Packet packet);
         protected virtual IEnumerator SlowUpdate()
@@ -36,51 +35,51 @@ namespace Yoyo.Runtime
         public Packet GetCommandPacket()
         {
             Packet packet = new Packet(0, (uint)PacketType.Command);
-            packet.Write(NetId.Identifier);
+            packet.Write(Entity.Identifier);
             return packet;
         }
 
         public Packet GetUpdatePacket()
         {
             Packet packet = new Packet(0, (uint)PacketType.Update);
-            packet.Write(NetId.Identifier);
+            packet.Write(Entity.Identifier);
             return packet;
         }
 
         public void SendCommand(Packet packet)
         {
-            if (NetId.Session != null && IsClient && IsLocalPlayer)
+            if (Entity.Session != null && IsClient && IsLocalPlayer)
             {
-                NetId.AddMsg(packet);
+                Entity.AddMsg(packet);
             }
         }
 
         public void SendUpdate(Packet packet)
         {
-            if (NetId.Session != null && IsServer)
+            if (Entity.Session != null && IsServer)
             {
-                NetId.AddMsg(packet);
+                Entity.AddMsg(packet);
             }
         }
 
         private void OnEnable() 
         {
-            NetId.RegisterBehaviour(this);
+            Entity.RegisterBehaviour(this);
         }
 
         private void OnDisable() 
         {
-            NetId.UnregisterBehaviour(this);
+            Entity.UnregisterBehaviour(this);
         }
 
         private IEnumerator Start() 
         {
-            if(NetId == null)
+            if(Entity == null)
             {
                 throw new System.Exception("ERROR: There is no network ID on this object");
             }
 
-            yield return new WaitUntil(() => NetId.IsInitialized);
+            yield return new WaitUntil(() => Entity.IsInitialized);
             
             NetAwake();
             NetStart();
