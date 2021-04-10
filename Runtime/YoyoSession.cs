@@ -22,13 +22,24 @@ namespace Yoyo.Runtime
 	public partial class YoyoSession : MonoBehaviour
 	{
         [Header("Session Options")]
+        [Tooltip("What is the IP address a client should connect to?")]
 		[SerializeField, DisplayAs("IP Address")] private string _ipAddressString = default;
+        [Tooltip("What port will the server be using?")]
         [SerializeField] private int _port = 0;
+        [Tooltip("How many clients can connect at once?")]
         [SerializeField, Range(1, 128)] 
 		private int _maxConnections = 32;
+        [Tooltip("How often will the server netcode update?")]
         public float MasterTimer = .05f;
+
+        // [Header("Socket Options")]
+        // [Tooltip("What is the packet buffer size for the socket?")]
+        // [SerializeField, NumberDropdown(512, 1024, 2048, 4096, 8192)] private int _bufferSize = 1024;
+        // [Tooltip("Should the socket use Nagle's Algorithm?")]
+        // [SerializeField] private bool _sendImmediate = false;
         
         [Header("Session State")]
+        [Tooltip("Is this Yoyo Session representing a client or server?")]
         [SerializeField, DisableEditing]
         private YoyoEnvironment _environment = YoyoEnvironment.None;
         [SerializeField, DisableEditing]
@@ -295,6 +306,7 @@ namespace Yoyo.Runtime
         }
 
         public void Update()
+        //public void LateUpdate()
         {
             ThreadManager.UpdateMain();
         }
@@ -346,7 +358,8 @@ namespace Yoyo.Runtime
                             foreach (var packet in MasterPacket)
                             {
                                 Debug.Log("yoyo - sent packet in master packet");
-                                item.Value.Send(packet);
+                                //item.Value.Send(packet);
+                                item.Value.Send(new Packet(packet));
                             }
                         }
                         catch

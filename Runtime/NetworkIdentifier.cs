@@ -120,6 +120,9 @@ namespace Yoyo.Runtime
         {
             //Debug.Log("Message WAS: " + gameObjectMessages);
             //May need to put race condition blocks here.
+
+            Debug.Log($"yoyo: adding packet of length {packet.Length()} to the waiting queue");
+
             lock (_lock)
             {
                 //GameObjectMessages += (msg + "\n");
@@ -137,6 +140,7 @@ namespace Yoyo.Runtime
         {
             //Get components for network behaviours
             //Destroy self if owner connection is done.
+            Debug.Log("In net update");
             try
             {
                 if (Session.Environment == YoyoEnvironment.Server && Session.Connections.ContainsKey(Owner) == false && Owner != -1)
@@ -160,6 +164,7 @@ namespace Yoyo.Runtime
                         //NetworkBehaviour[] myNets = gameObject.GetComponents<NetworkBehaviour>();
                         for (int i = 0; i < _networkBehaviours.Count; i++)
                         {
+                            Debug.Log("Passing to network behaviour #" + i, _networkBehaviours[i]);
                             // ! this will break for more than one read
                             //_networkBehaviours[i].HandleMessage(var, value);
                             _networkBehaviours[i].HandleMessage(new Packet(packet));
@@ -168,7 +173,7 @@ namespace Yoyo.Runtime
             }
             catch (System.Exception e)
             {
-                Debug.Log("Game Object "+name+" Caught Exception: " + e.ToString());
+                Debug.Log("Game Object "+name+" Caught Exception: " + e.ToString(), gameObject);
                 //This can happen if myCore has not been set.  
                 //I am not sure how this is possible, but it should be good for the next round.
             }

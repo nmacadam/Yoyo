@@ -15,7 +15,7 @@ namespace Yoyo.Runtime
         private Socket _socket;
         private YoyoSession _session;
 
-        public const int DataBufferSize = 1024;
+        public const int DataBufferSize = 2048;
 
         private byte[] _buffer = new byte[DataBufferSize];
         private Packet receivedData = new Packet();
@@ -56,6 +56,8 @@ namespace Yoyo.Runtime
         {
             try
             {
+                Debug.Log($"yoyo - pre write length: {packet.Length()} byte packet");
+
                 packet.WriteLength();
 
                 Debug.Log($"yoyo - sending {packet.Length()} byte packet");
@@ -345,7 +347,7 @@ namespace Yoyo.Runtime
                     return;
                 }
 
-                Debug.Log($"yoyo - received {byteLength} bytes");
+                Debug.Log($"yoyo:packetInfo - received {byteLength} total bytes");
 
                 //this._tcpDidReceive = true;
 
@@ -413,8 +415,11 @@ namespace Yoyo.Runtime
             if (receivedData.UnreadLength() >= 4)
             {
                 _packetLength = receivedData.ReadInt();
+                Debug.Log("yoyo:packetInfo - packet length: " + _packetLength);
+
                 if (_packetLength <= 0)
                 {
+                    Debug.Log("yoyo:packetInfo - completed received data read");
                     return true;
                 }
             }
@@ -428,7 +433,7 @@ namespace Yoyo.Runtime
                     PacketHeader header = packet.ReadHeader();
                     //int _packetId = _packet.ReadInt();
                     //Server.packetHandlers[_packetId](id, _packet);
-                    Debug.Log("received: " + (PacketType)header.PacketType);
+                    Debug.Log("yoyo:packetInfo - received packet type: " + (PacketType)header.PacketType);
 
                     if (Session.Environment == YoyoEnvironment.Client)
                     {
@@ -440,12 +445,17 @@ namespace Yoyo.Runtime
                     }
                 });
 
+                Debug.Log("yoyo:packetInfo - remaining unread bytes: " + receivedData.UnreadLength());
+
                 _packetLength = 0;
                 if (receivedData.UnreadLength() >= 4)
                 {
                     _packetLength = receivedData.ReadInt();
+                    Debug.Log("yoyo:packetInfo - packet length: " + _packetLength);
+
                     if (_packetLength <= 0)
                     {
+                        Debug.Log("yoyo:packetInfo - completed received data read");
                         return true;
                     }
                 }
@@ -453,9 +463,11 @@ namespace Yoyo.Runtime
 
             if (_packetLength <= 1)
             {
+                Debug.Log("yoyo:packetInfo - completed received data read");
                 return true;
             }
 
+            Debug.Log("yoyo:packetInfo - packet read incomplete...");
             return false;
         }
 
@@ -474,6 +486,7 @@ namespace Yoyo.Runtime
                         //All values will be seperated by a '#' mark.
                         //PLayerID#<NUM> will signify the player ID for this connection.
                         PlayerId = packet.ReadInt();
+                        Debug.Log("Assigned player id " + PlayerId);
                         Session.LocalPlayerId = PlayerId;
                     }
                     catch (System.FormatException)
@@ -490,6 +503,9 @@ namespace Yoyo.Runtime
                         int type = packet.ReadInt();
                         int owner = packet.ReadInt();
                         int netId = packet.ReadInt();
+
+                        Debug.Log($"Creating object: (type: {type}, owner: {owner}, netId: {netId})");
+
                         Vector3 position = packet.ReadVector3();
 
                         // ! could cause an issue?
@@ -650,12 +666,13 @@ namespace Yoyo.Runtime
             // ! might need this
             //int type = packet.ReadInt();
             int netId = packet.ReadInt();
+            Debug.Log("Passing to NetID: " + netId);
             //string flag = packet.ReadString();
             //string value = packet.ReadString();
             if(Session.NetObjects.ContainsKey(netId))
             {
-                //Session.NetObjects[netId].Net_Update(type, flag, value);
-                Session.NetObjects[netId].Net_Update(type, packet);
+                ThreadManager.ExecuteOnMainThread(() => Session.NetObjects[netId].Net_Update(type, packet));
+                //Session.NetObjects[netId].Net_Update(type, packet);
             }
         }
 	}

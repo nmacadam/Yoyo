@@ -135,7 +135,7 @@ namespace Yoyo.Runtime
             Debug.Log("b");
 
 			//Udpate all current network objects
-            foreach (KeyValuePair<int,NetworkIdentifier> entry in session.NetObjects)
+            foreach (KeyValuePair<int, NetworkIdentifier> entry in session.NetObjects)
             {//This will create a custom create string for each existing object in the game.
             //     string tempRot = entry.Value.transform.rotation.ToString();
             //     tempRot = tempRot.Replace(',', '#');
@@ -169,7 +169,8 @@ namespace Yoyo.Runtime
             Debug.Log("yoyo - sending packet to create network player manager");
 
             //Create NetworkPlayerManager
-            ThreadManager.ExecuteOnMainThread(() => session.NetCreateObject(-1, session.ConnectionCount - 1, new Vector3(session.Connections[session.ConnectionCount -1].PlayerId*2-3,0,0)));
+            ThreadManager.ExecuteOnMainThread(() => session.NetCreateObject(-1, session.ConnectionCount - 1));
+            //session.NetCreateObject(-1, session.ConnectionCount - 1);
             session.CurrentlyConnecting = false;
         }
 
@@ -236,7 +237,7 @@ namespace Yoyo.Runtime
                         //MasterMessage += MSG;
                         MasterPacket.Enqueue(createPacket);
                     }
-                    Debug.Log("yoyo - added create packet to master packet");
+                    Debug.Log($"yoyo - added create packet to master packet (type: {type}, owner: {ownMe}, netId: {NetObjectCount - 1})");
 
                     foreach(NetworkBehaviour n in temp.GetComponents<NetworkBehaviour>())
                     {
