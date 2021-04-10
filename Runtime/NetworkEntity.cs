@@ -9,7 +9,7 @@ using Yoyo.Attributes;
 namespace Yoyo.Runtime
 {
     // rename to gameobject id
-	public class NetworkIdentifier : MonoBehaviour
+	public class NetworkEntity : MonoBehaviour
 	{
         [Header("Network Info")]
         [SerializeField, DisableEditing] private int _owner = -10;
@@ -97,10 +97,10 @@ namespace Yoyo.Runtime
                 {
                     lock (Session.ObjLock)
                     {
-                        Identifier = Session.NetObjectCount;
-                        Session.NetObjectCount++;
+                        Identifier = Session.NetEntityCount;
+                        Session.NetEntityCount++;
                         Owner = -1;
-                        Session.NetObjects.Add(Identifier, this);
+                        Session.NetEntities.Add(Identifier, this);
                     }
                 }
             }

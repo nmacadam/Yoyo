@@ -57,8 +57,8 @@ namespace Yoyo.Runtime
 
         private IPAddress _ipAddress;
         private Dictionary<int, TcpConnection> _connections;
-        private Dictionary<int, NetworkIdentifier> _netObjects;
-        private int _netObjectCount = 0;
+        private Dictionary<int, NetworkEntity> _netEntities;
+        private int _netEntityCount = 0;
         private int _connectionCount = 0;
 
         private SocketParameters _tcpParameters;
@@ -73,8 +73,8 @@ namespace Yoyo.Runtime
         public bool CurrentlyConnecting { get => _currentlyConnecting; private set => _currentlyConnecting = value; }
         public int LocalPlayerId { get => _localPlayerId; set => _localPlayerId = value; }
         public Dictionary<int, TcpConnection> Connections { get => _connections; private set => _connections = value; }
-        public Dictionary<int, NetworkIdentifier> NetObjects { get => _netObjects; private set => _netObjects = value; }
-        public int NetObjectCount { get => _netObjectCount; set => _netObjectCount = value; }
+        public Dictionary<int, NetworkEntity> NetEntities { get => _netEntities; private set => _netEntities = value; }
+        public int NetEntityCount { get => _netEntityCount; set => _netEntityCount = value; }
         public int ConnectionCount { get => _connectionCount; set => _connectionCount = value; }
 
         public SocketParameters TcpParameters => _tcpParameters;
@@ -86,8 +86,8 @@ namespace Yoyo.Runtime
         // Locks
         public object ObjLock = new object();
         public object WaitingLock = new object();
-        private object _conLock = new object();
-        private object _masterMessage = new object();
+        private object _socketOperationLock = new object();
+        private object _masterPacketLock = new object();
 
         private void Start()
         {
@@ -113,7 +113,7 @@ namespace Yoyo.Runtime
                 _port = 9001;
             }
             Connections = new Dictionary<int, TcpConnection>();
-            NetObjects = new Dictionary<int, NetworkIdentifier>();
+            NetEntities = new Dictionary<int, NetworkEntity>();
         }
 
         /// <summary>
@@ -143,11 +143,11 @@ namespace Yoyo.Runtime
                 _environment = YoyoEnvironment.None;
                 this.IsConnected = false;
                 this.LocalPlayerId = -10;
-                foreach (KeyValuePair<int, NetworkIdentifier> obj in NetObjects)
+                foreach (KeyValuePair<int, NetworkEntity> obj in NetEntities)
                 {
                     Destroy(obj.Value.gameObject);
                 }
-                NetObjects.Clear();
+                NetEntities.Clear();
                 Connections.Clear();              
             }
             if (Environment == YoyoEnvironment.Server)
@@ -186,7 +186,7 @@ namespace Yoyo.Runtime
             { 
                 //Remove Connection from server
                 List<int> badObjs = new List<int>();
-                foreach (KeyValuePair<int, NetworkIdentifier> obj in NetObjects)
+                foreach (KeyValuePair<int, NetworkEntity> obj in NetEntities)
                 {
                     if (obj.Value.Owner == badConnection)
                     {
@@ -209,7 +209,7 @@ namespace Yoyo.Runtime
             {
                 try
                 {
-                    lock (_conLock)
+                    lock (_socketOperationLock)
                     {
                         Debug.Log("Sending Disconnect!");
                         Connections[0].IsDisconnecting = true;
@@ -240,7 +240,7 @@ namespace Yoyo.Runtime
                 {
                     foreach (KeyValuePair<int, TcpConnection> obj in Connections)
                     {
-                        lock (_conLock)
+                        lock (_socketOperationLock)
                         {
                             Packet disconnectPacket = new Packet(0, (uint)PacketType.Disconnect);
                             disconnectPacket.Write(-1);
@@ -259,7 +259,7 @@ namespace Yoyo.Runtime
                 _environment = YoyoEnvironment.None;
                 try
                 {
-                    foreach (KeyValuePair<int, NetworkIdentifier> obj in NetObjects)
+                    foreach (KeyValuePair<int, NetworkEntity> obj in NetEntities)
                     {
                         Destroy(obj.Value.gameObject);
                     }
@@ -286,7 +286,7 @@ namespace Yoyo.Runtime
                 CanJoin = true;
                 try
                 {
-                    NetObjects.Clear();
+                    NetEntities.Clear();
                     Connections.Clear();
                     StopListening();
                     _tcpListener.Close();
@@ -295,7 +295,7 @@ namespace Yoyo.Runtime
                 catch (System.NullReferenceException)
                 {
                     Debug.Log("Inside error.");
-                    NetObjects = new Dictionary<int, NetworkIdentifier>();
+                    NetEntities = new Dictionary<int, NetworkEntity>();
                     Connections = new Dictionary<int, TcpConnection>();
                 }              
             }
@@ -333,9 +333,9 @@ namespace Yoyo.Runtime
             {
                 //Compose Master Message
 
-                foreach(KeyValuePair<int, NetworkIdentifier> id in NetObjects)
+                foreach(KeyValuePair<int, NetworkEntity> id in NetEntities)
                 {
-                    lock (_masterMessage)
+                    lock (_masterPacketLock)
                     {
                         //Add their message to the masterMessage (the one we send)
                         lock (id.Value._lock)
@@ -359,6 +359,7 @@ namespace Yoyo.Runtime
                 //if(MasterMessage != "")
                 if(MasterPacket.Count != 0)
                 {
+                    // ! THIS NEEDS A LOCK; IF SOMETHING JOINS OR IS REMOVED IT MESSES THINGS UP
                     foreach(KeyValuePair<int,TcpConnection> item in Connections)
                     {
                         try
@@ -377,13 +378,13 @@ namespace Yoyo.Runtime
                             bad.Add(item.Key);
                         }
                     }
-                    lock(_masterMessage)
+                    lock(_masterPacketLock)
                     {
                         //MasterMessage = "";//delete old values.
                         MasterPacket.Clear();
                         
                     }
-                    lock (_conLock)
+                    lock (_socketOperationLock)
                     {
                         foreach (int i in bad)
                         {

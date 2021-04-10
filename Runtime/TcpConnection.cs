@@ -256,10 +256,10 @@ namespace Yoyo.Runtime
                         {
                             go = GameObject.Instantiate(Session.NetworkPlayerManager, position, rotation);
                         }
-                        go.GetComponent<NetworkIdentifier>().Owner = owner;
-                        go.GetComponent<NetworkIdentifier>().Identifier = netId;
-                        go.GetComponent<NetworkIdentifier>().Type = type;
-                        Session.NetObjects[netId] = go.GetComponent<NetworkIdentifier>();
+                        go.GetComponent<NetworkEntity>().Owner = owner;
+                        go.GetComponent<NetworkEntity>().Identifier = netId;
+                        go.GetComponent<NetworkEntity>().Type = type;
+                        Session.NetEntities[netId] = go.GetComponent<NetworkEntity>();
                     }
                     catch
                     {
@@ -272,10 +272,10 @@ namespace Yoyo.Runtime
                     try
                     {
                         int badId = packet.ReadInt();
-                        if (Session.NetObjects.ContainsKey(badId))
+                        if (Session.NetEntities.ContainsKey(badId))
                         {
-                            GameObject.Destroy(Session.NetObjects[badId].gameObject);
-                            Session.NetObjects.Remove(badId);
+                            GameObject.Destroy(Session.NetEntities[badId].gameObject);
+                            Session.NetEntities.Remove(badId);
                         }
 
                     }
@@ -335,9 +335,9 @@ namespace Yoyo.Runtime
                 case PacketType.Dirty:
                 {
                     int id = packet.ReadInt();
-                    if (Session.NetObjects.ContainsKey(id))
+                    if (Session.NetEntities.ContainsKey(id))
                     {
-                        foreach (NetworkBehaviour n in Session.NetObjects[id].gameObject.GetComponents<NetworkBehaviour>())
+                        foreach (NetworkBehaviour n in Session.NetEntities[id].gameObject.GetComponents<NetworkBehaviour>())
                         {
                             n.IsDirty = true;
                         }
@@ -385,9 +385,9 @@ namespace Yoyo.Runtime
         {
             int netId = packet.ReadInt();
             Debug.Log("Passing to NetID: " + netId);
-            if(Session.NetObjects.ContainsKey(netId))
+            if(Session.NetEntities.ContainsKey(netId))
             {
-                ThreadManager.ExecuteOnMainThread(() => Session.NetObjects[netId].Net_Update(type, packet));
+                ThreadManager.ExecuteOnMainThread(() => Session.NetEntities[netId].Net_Update(type, packet));
             }
         }
 	}

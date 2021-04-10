@@ -6,13 +6,13 @@ using UnityEngine;
 
 namespace Yoyo.Runtime
 {
-	[RequireComponent(typeof(NetworkIdentifier))]
+	[RequireComponent(typeof(NetworkEntity))]
     public abstract class NetworkBehaviour : MonoBehaviour
     {
-        [SerializeField] private NetworkIdentifier _netId;
+        [SerializeField] private NetworkEntity _netId;
         private bool _dirty = false;
 
-        public NetworkIdentifier NetId { get => _netId; private set => _netId = value; }
+        public NetworkEntity NetId { get => _netId; private set => _netId = value; }
         public bool IsDirty { get => _dirty; set => _dirty = value; }
 
         public bool IsClient => NetId.Session.Environment == YoyoEnvironment.Client;

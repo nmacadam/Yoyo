@@ -104,7 +104,7 @@ namespace Yoyo.Runtime
 
             TcpConnection temp = new TcpConnection(session.TcpParameters, session.ConnectionCount, handler, session);
             session.ConnectionCount++;
-            lock (session._conLock)
+            lock (session._socketOperationLock)
             {
                 session.Connections.Add(temp.PlayerId, temp);
             }
@@ -130,7 +130,7 @@ namespace Yoyo.Runtime
             session.Connections[session.ConnectionCount - 1].BeginReceive();
 
 			// Update all current network objects
-            foreach (KeyValuePair<int, NetworkIdentifier> entry in session.NetObjects)
+            foreach (KeyValuePair<int, NetworkEntity> entry in session.NetEntities)
             {
                 lock (session._sendLock)
                 {
@@ -157,6 +157,7 @@ namespace Yoyo.Runtime
             session.CurrentlyConnecting = false;
         }
 
+        // todo: not sure if this needs to exist since it is basically like stop listening
         public void CloseGame()
         {
             if (Environment == YoyoEnvironment.Server && IsConnected && CanJoin)
@@ -167,11 +168,14 @@ namespace Yoyo.Runtime
         }
 
         /// <summary>
-        /// Object functions
-        /// NetCreateObject -> creates an object across the network
-        /// NetDestroyObject -> Destroys an object across the network
+        /// Instantiates an GameObject across the network
         /// </summary>
-        public GameObject NetInstantiate(int contractIndex, int owner, Vector3 initPos = new Vector3() , Quaternion rotation = new Quaternion())
+        /// <param name="contractIndex">The prefab's index in the network contract</param>
+        /// <param name="owner">The player ID of the object's owner</param>
+        /// <param name="position">The GameObject's position</param>
+        /// <param name="rotation">The GameObject's rotation</param>
+        /// <returns>The server-side GameObject</returns>
+        public GameObject NetInstantiate(int contractIndex, int owner, Vector3 position = new Vector3() , Quaternion rotation = new Quaternion())
         {
             if (Environment == YoyoEnvironment.Server)
             {
@@ -180,30 +184,30 @@ namespace Yoyo.Runtime
                 {
                     if (contractIndex != -1)
                     {
-                        go = GameObject.Instantiate(ContractPrefabs[contractIndex], initPos, rotation);
+                        go = GameObject.Instantiate(ContractPrefabs[contractIndex], position, rotation);
                     }
                     else
                     {
-                        go = GameObject.Instantiate(NetworkPlayerManager, initPos, rotation);
+                        go = GameObject.Instantiate(NetworkPlayerManager, position, rotation);
                     }
-                    go.GetComponent<NetworkIdentifier>().Owner = owner;
-                    go.GetComponent<NetworkIdentifier>().Identifier = NetObjectCount;
-                    go.GetComponent<NetworkIdentifier>().Type = contractIndex;
-                    NetObjects[NetObjectCount] = go.GetComponent<NetworkIdentifier>();
-                    NetObjectCount++;
+                    go.GetComponent<NetworkEntity>().Owner = owner;
+                    go.GetComponent<NetworkEntity>().Identifier = NetEntityCount;
+                    go.GetComponent<NetworkEntity>().Type = contractIndex;
+                    NetEntities[NetEntityCount] = go.GetComponent<NetworkEntity>();
+                    NetEntityCount++;
 
                     Packet createPacket = new Packet(0, (uint)PacketType.Create);
                     createPacket.Write(contractIndex);
                     createPacket.Write(owner);
-                    createPacket.Write(NetObjectCount - 1);
-                    createPacket.Write(initPos);
+                    createPacket.Write(NetEntityCount - 1);
+                    createPacket.Write(position);
                     createPacket.Write(rotation);
 
-                    lock(_masterMessage)
+                    lock(_masterPacketLock)
                     {
                         MasterPacket.Enqueue(createPacket);
                     }
-                    Debug.Log($"yoyo - added create packet to master packet (type: {contractIndex}, owner: {owner}, netId: {NetObjectCount - 1})");
+                    Debug.Log($"yoyo - added create packet to master packet (type: {contractIndex}, owner: {owner}, netId: {NetEntityCount - 1})");
 
                     foreach(NetworkBehaviour n in go.GetComponents<NetworkBehaviour>())
                     {
@@ -220,14 +224,18 @@ namespace Yoyo.Runtime
 
         }
 
+        /// <summary>
+        /// Destroys an object across the network
+        /// </summary>
+        /// <param name="netIDBad">The object's net identifier</param>
         public void NetDestroy(int netIDBad)
         {
             try
             {
-                if (NetObjects.ContainsKey(netIDBad))
+                if (NetEntities.ContainsKey(netIDBad))
                 {
-                    Destroy(NetObjects[netIDBad].gameObject);
-                    NetObjects.Remove(netIDBad);
+                    Destroy(NetEntities[netIDBad].gameObject);
+                    NetEntities.Remove(netIDBad);
                 }
             }
             catch
@@ -237,7 +245,7 @@ namespace Yoyo.Runtime
             Packet deletePacket = new Packet(0, (uint)PacketType.Destroy);
             deletePacket.Write(netIDBad);
 
-            lock(_masterMessage)
+            lock(_masterPacketLock)
             {
                 MasterPacket.Enqueue(deletePacket);
             }
