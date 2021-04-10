@@ -20,7 +20,6 @@ namespace Yoyo.Runtime
         [Header("GameObject Info")]
 		public int Type;
 
-        //public string GameObjectMessages = "";
         public Queue<Packet> GameObjectPackets = new Queue<Packet>();
 
         private YoyoSession _session;

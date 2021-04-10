@@ -53,7 +53,7 @@ namespace Yoyo.Runtime
             // Client will use the con list (but only have one entry).
             _environment = YoyoEnvironment.Client;
             TcpConnection temp = new TcpConnection(_tcpParameters, 0, (Socket)ar.AsyncState, this);
-            temp.TCPCon.EndConnect(ar);//This finishes the TCP connection (DOES NOT DISCONNECT)    
+            temp.Socket.EndConnect(ar);//This finishes the TCP connection (DOES NOT DISCONNECT)    
             IsConnected = true;
             Connections.Add(0, temp);
             CurrentlyConnecting = true;

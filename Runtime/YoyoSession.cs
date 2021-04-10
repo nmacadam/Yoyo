@@ -81,7 +81,6 @@ namespace Yoyo.Runtime
 
         //WE are going to push a variable to notify the master an ID has a message.
         public bool MessageWaiting { get; set; }
-        //public string MasterMessage { get; set; }
         public Queue<Packet> MasterPacket = new Queue<Packet>();
 
         // Locks
@@ -132,12 +131,12 @@ namespace Yoyo.Runtime
                     TcpConnection badCon = Connections[badConnection];
                     try
                     {
-                        badCon.TCPCon.Shutdown(SocketShutdown.Both);
+                        badCon.Socket.Shutdown(SocketShutdown.Both);
                     }
                     catch
                     { }                 
                     try
-                    {badCon.TCPCon.Close();}
+                    {badCon.Socket.Close();}
                     catch
                     {}
                 }
@@ -158,8 +157,8 @@ namespace Yoyo.Runtime
                     if (Connections.ContainsKey(badConnection))
                     {
                         TcpConnection badCon = Connections[badConnection];
-                        badCon.TCPCon.Shutdown(SocketShutdown.Both);
-                        badCon.TCPCon.Close();  
+                        badCon.Socket.Shutdown(SocketShutdown.Both);
+                        badCon.Socket.Close();  
                     }
                 }
                 catch (System.Net.Sockets.SocketException)
