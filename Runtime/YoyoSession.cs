@@ -22,13 +22,24 @@ namespace Yoyo.Runtime
 	public partial class YoyoSession : MonoBehaviour
 	{
         [Header("Session Options")]
-		[SerializeField] private string _ipAddress = default;
+        [Tooltip("What is the IP address a client should connect to?")]
+		[SerializeField, DisplayAs("IP Address")] private string _ipAddressString = default;
+        [Tooltip("What port will the server be using?")]
         [SerializeField] private int _port = 0;
+        [Tooltip("How many clients can connect at once?")]
         [SerializeField, Range(1, 128)] 
 		private int _maxConnections = 32;
+        [Tooltip("How often will the server netcode update?")]
         public float MasterTimer = .05f;
+
+        [Header("Socket Options")]
+        [Tooltip("What is the packet buffer size for the socket?")]
+        [SerializeField, NumberDropdown(512, 1024, 2048, 4096, 8192)] private int _bufferSize = 1024;
+        [Tooltip("Should the socket use Nagle's Algorithm?")]
+        [SerializeField] private bool _noDelay = false;
         
         [Header("Session State")]
+        [Tooltip("Is this Yoyo Session representing a client or server?")]
         [SerializeField, DisableEditing]
         private YoyoEnvironment _environment = YoyoEnvironment.None;
         [SerializeField, DisableEditing]
@@ -40,55 +51,69 @@ namespace Yoyo.Runtime
         [SerializeField, DisableEditing]
         private bool _currentlyConnecting = false;
 
-        public Dictionary<int, TcpConnection> Connections;
-        public Dictionary<int, NetworkIdentifier> NetObjs;
+        [Header("Session Contract")]
+        public GameObject[] _contractPrefabs;
+        public GameObject _networkPlayerManager;
 
-        //Game Object variables
-        public int ObjectCounter = 0;
-        public int ConCounter = 0;
-        public GameObject[] SpawnPrefab;
+        private IPAddress _ipAddress;
+        private Dictionary<int, TcpConnection> _connections;
+        private Dictionary<int, NetworkEntity> _netEntities;
+        private int _netEntityCount = 0;
+        private int _connectionCount = 0;
 
-          
-        //WE are going to push a variable to notify the master an ID has a message.
-        public bool MessageWaiting = false;
-        Coroutine ListeningThread;
-        public string MasterMessage;
-        public GameObject NetworkPlayerManager;//This will be the first thing that is spawned!
+        private SocketParameters _tcpParameters;
 
-        //Locks
-        public object _objLock = new object();
-        public object _waitingLock = new object();
+        public GameObject[] ContractPrefabs => _contractPrefabs;
+        public GameObject NetworkPlayerManager => _networkPlayerManager;
 
-        private object _conLock = new object();
-        private object _masterMessage = new object();
-
-        public DateTime StartConnection;
-
-
+        public IPAddress Address => _ipAddress;
         public YoyoEnvironment Environment => _environment;
-
         public bool IsConnected { get => _isConnected; private set => _isConnected = value; }
         public bool CanJoin { get => _canJoin; private set => _canJoin = value; }
         public bool CurrentlyConnecting { get => _currentlyConnecting; private set => _currentlyConnecting = value; }
         public int LocalPlayerId { get => _localPlayerId; set => _localPlayerId = value; }
+        public Dictionary<int, TcpConnection> Connections { get => _connections; private set => _connections = value; }
+        public Dictionary<int, NetworkEntity> NetEntities { get => _netEntities; private set => _netEntities = value; }
+        public int NetEntityCount { get => _netEntityCount; set => _netEntityCount = value; }
+        public int ConnectionCount { get => _connectionCount; set => _connectionCount = value; }
 
-        // Use this for initialization
-        void Start()
+        public SocketParameters TcpParameters => _tcpParameters;
+
+        //WE are going to push a variable to notify the master an ID has a message.
+        public bool MessageWaiting { get; set; }
+        public Queue<Packet> MasterPacket = new Queue<Packet>();
+
+        // Locks
+        public object ObjLock = new object();
+        public object WaitingLock = new object();
+        private object _socketOperationLock = new object();
+        private object _masterPacketLock = new object();
+
+        private void Start()
         {
             _environment = YoyoEnvironment.None;
+
+            _tcpParameters = new SocketParameters() 
+            {
+                BufferSize = _bufferSize,
+                NoDelay = _noDelay
+            };
+            
             IsConnected = false;
             CurrentlyConnecting = false;
             //ipAddress = "127.0.0.1";//Local host
-            if (_ipAddress == "")
+            if (_ipAddressString == "")
             {
-                _ipAddress = "127.0.0.1";//Local host
+                _ipAddressString = "127.0.0.1"; //Local host
             }
+            _ipAddress = IPAddress.Parse(_ipAddressString);
+
             if (_port == 0)
             {
                 _port = 9001;
             }
             Connections = new Dictionary<int, TcpConnection>();
-            NetObjs = new Dictionary<int, NetworkIdentifier>();
+            NetEntities = new Dictionary<int, NetworkEntity>();
         }
 
         /// <summary>
@@ -106,23 +131,23 @@ namespace Yoyo.Runtime
                     TcpConnection badCon = Connections[badConnection];
                     try
                     {
-                        badCon.TCPCon.Shutdown(SocketShutdown.Both);
+                        badCon.Socket.Shutdown(SocketShutdown.Both);
                     }
                     catch
                     { }                 
                     try
-                    {badCon.TCPCon.Close();}
+                    {badCon.Socket.Close();}
                     catch
                     {}
                 }
                 _environment = YoyoEnvironment.None;
                 this.IsConnected = false;
                 this.LocalPlayerId = -10;
-                foreach (KeyValuePair<int, NetworkIdentifier> obj in NetObjs)
+                foreach (KeyValuePair<int, NetworkEntity> obj in NetEntities)
                 {
                     Destroy(obj.Value.gameObject);
                 }
-                NetObjs.Clear();
+                NetEntities.Clear();
                 Connections.Clear();              
             }
             if (Environment == YoyoEnvironment.Server)
@@ -132,8 +157,8 @@ namespace Yoyo.Runtime
                     if (Connections.ContainsKey(badConnection))
                     {
                         TcpConnection badCon = Connections[badConnection];
-                        badCon.TCPCon.Shutdown(SocketShutdown.Both);
-                        badCon.TCPCon.Close();  
+                        badCon.Socket.Shutdown(SocketShutdown.Both);
+                        badCon.Socket.Close();  
                     }
                 }
                 catch (System.Net.Sockets.SocketException)
@@ -161,7 +186,7 @@ namespace Yoyo.Runtime
             { 
                 //Remove Connection from server
                 List<int> badObjs = new List<int>();
-                foreach (KeyValuePair<int, NetworkIdentifier> obj in NetObjs)
+                foreach (KeyValuePair<int, NetworkEntity> obj in NetEntities)
                 {
                     if (obj.Value.Owner == badConnection)
                     {
@@ -173,7 +198,7 @@ namespace Yoyo.Runtime
                 //Now I can remove the netObjs from the dictionary.
                 for (int i = 0; i < badObjs.Count; i++)
                 {
-                    NetDestroyObject(badObjs[i]);
+                    NetDestroy(badObjs[i]);
                 }
             }
         }
@@ -184,15 +209,20 @@ namespace Yoyo.Runtime
             {
                 try
                 {
-                    lock (_conLock)
+                    lock (_socketOperationLock)
                     {
                         Debug.Log("Sending Disconnect!");
                         Connections[0].IsDisconnecting = true;
 
-                        Connections[0].Send(Encoding.ASCII.
-                                            GetBytes(
-                                            "DISCON#" + Connections[0].PlayerId.ToString() + "\n")
-                                            );
+                        Packet disconnectPacket = new Packet(0, (uint)PacketType.Disconnect);
+                        disconnectPacket.Write(Connections[0].PlayerId);
+
+                        Connections[0].Send(disconnectPacket);
+
+                        // Connections[0].Send(Encoding.ASCII.
+                        //                     GetBytes(
+                        //                     "DISCON#" + Connections[0].PlayerId.ToString() + "\n")
+                        //                     );
 
                     }
                 }
@@ -210,12 +240,17 @@ namespace Yoyo.Runtime
                 {
                     foreach (KeyValuePair<int, TcpConnection> obj in Connections)
                     {
-                        lock (_conLock)
+                        lock (_socketOperationLock)
                         {
-                            Connections[obj.Key].Send(Encoding.ASCII.
-                                             GetBytes(
-                                             "DISCON#-1\n")
-                                             );
+                            Packet disconnectPacket = new Packet(0, (uint)PacketType.Disconnect);
+                            disconnectPacket.Write(-1);
+                            
+                            Connections[obj.Key].Send(disconnectPacket);
+
+                            // Connections[obj.Key].Send(Encoding.ASCII.
+                            //                  GetBytes(
+                            //                  "DISCON#-1\n")
+                            //                  );
                             Connections[obj.Key].IsDisconnecting = true;
                         }
                     }
@@ -224,7 +259,7 @@ namespace Yoyo.Runtime
                 _environment = YoyoEnvironment.None;
                 try
                 {
-                    foreach (KeyValuePair<int, NetworkIdentifier> obj in NetObjs)
+                    foreach (KeyValuePair<int, NetworkEntity> obj in NetEntities)
                     {
                         Destroy(obj.Value.gameObject);
                     }
@@ -251,21 +286,21 @@ namespace Yoyo.Runtime
                 CanJoin = true;
                 try
                 {
-                    NetObjs.Clear();
+                    NetEntities.Clear();
                     Connections.Clear();
-                    StopCoroutine(ListeningThread);  
-                    TCP_Listener.Close();
+                    StopListening();
+                    _tcpListener.Close();
                     
                 }
                 catch (System.NullReferenceException)
                 {
                     Debug.Log("Inside error.");
-                    NetObjs = new Dictionary<int, NetworkIdentifier>();
+                    NetEntities = new Dictionary<int, NetworkEntity>();
                     Connections = new Dictionary<int, TcpConnection>();
                 }              
             }
         }
-        IEnumerator WaitForDisc()
+        private IEnumerator WaitForDisc()
         {
             if (Environment == YoyoEnvironment.Client)
             {
@@ -275,9 +310,15 @@ namespace Yoyo.Runtime
             yield return new WaitForSeconds(.1f);
         }
 
-        public void OnApplicationQuit()
+        private void OnApplicationQuit()
         {
             LeaveGame();
+        }
+
+        private void Update()
+        //public void LateUpdate()
+        {
+            ThreadManager.UpdateMain();
         }
 
         /// <summary>
@@ -292,16 +333,21 @@ namespace Yoyo.Runtime
             {
                 //Compose Master Message
 
-                foreach(KeyValuePair<int, NetworkIdentifier> id in NetObjs)
+                foreach(KeyValuePair<int, NetworkEntity> id in NetEntities)
                 {
-                    lock (_masterMessage)
+                    lock (_masterPacketLock)
                     {
                         //Add their message to the masterMessage (the one we send)
                         lock (id.Value._lock)
                         {
-                            MasterMessage += id.Value.GameObjectMessages + "\n";
+                            //MasterMessage += id.Value.GameObjectMessages + "\n";
+                            foreach (var packet in id.Value.GameObjectPackets)
+                            {
+                                MasterPacket.Enqueue(packet);
+                            }
                             //Clear Game Objects messages.
-                            id.Value.GameObjectMessages = "";
+                            //id.Value.GameObjectMessages = "";
+                            id.Value.GameObjectPackets.Clear();
                         }
 
                     }
@@ -310,26 +356,35 @@ namespace Yoyo.Runtime
 
                 //Send Master Message
                 List<int> bad = new List<int>();
-                if(MasterMessage != "")
+                //if(MasterMessage != "")
+                if(MasterPacket.Count != 0)
                 {
+                    // ! THIS NEEDS A LOCK; IF SOMETHING JOINS OR IS REMOVED IT MESSES THINGS UP
                     foreach(KeyValuePair<int,TcpConnection> item in Connections)
                     {
                         try
                         {
                             //This will send all of the information to the client (or to the server if on a client).
-                            item.Value.Send(Encoding.ASCII.GetBytes(MasterMessage));
+                            //item.Value.Send(Encoding.ASCII.GetBytes(MasterMessage));
+                            foreach (var packet in MasterPacket)
+                            {
+                                Debug.Log("yoyo - sent packet in master packet");
+                                //item.Value.Send(packet);
+                                item.Value.Send(new Packet(packet));
+                            }
                         }
                         catch
                         {
                             bad.Add(item.Key);
                         }
                     }
-                    lock(_masterMessage)
+                    lock(_masterPacketLock)
                     {
-                        MasterMessage = "";//delete old values.
+                        //MasterMessage = "";//delete old values.
+                        MasterPacket.Clear();
                         
                     }
-                    lock (_conLock)
+                    lock (_socketOperationLock)
                     {
                         foreach (int i in bad)
                         {
@@ -337,11 +392,12 @@ namespace Yoyo.Runtime
                         }
                     }
                 }
-                lock (_waitingLock)
+                lock (WaitingLock)
                 {
                     MessageWaiting = false;
                 }
-                while(!MessageWaiting && MasterMessage == "")
+                //while(!MessageWaiting && MasterMessage == "")
+                while(!MessageWaiting && MasterPacket.Count == 0)
                 {
                     yield return new WaitForSeconds(MasterTimer);//
                 }

@@ -15,6 +15,7 @@
 + Moved server specific code to ServerSession script
 + Moved client specific code to ClientSession script
 + Made Unity MonoBehaviour functions private
++ Replaced listener socket coroutine(s) with async callback loop
 
 - TcpConnection - 
 + Renamed NetworkConnection to TcpConnection
@@ -37,3 +38,6 @@
 + Rolled SlowStart method into coroutine Start
 + Made NetworkIdentifier field serialized
 + Subscribes and unsubscribes from NetworkIdentifier in OnEnable and OnDisable, respectively
++ Restructured call stack
+  + Added NetStart method
+  + Added NetUpdate method
