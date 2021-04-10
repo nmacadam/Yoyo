@@ -19,7 +19,9 @@ namespace Yoyo.Runtime
 
         [Header("GameObject Info")]
 		public int Type;
-        public string GameObjectMessages = "";
+
+        //public string GameObjectMessages = "";
+        public Queue<Packet> GameObjectPackets = new Queue<Packet>();
 
         private YoyoSession _session;
         private List<NetworkBehaviour> _networkBehaviours = new List<NetworkBehaviour>();
@@ -113,13 +115,18 @@ namespace Yoyo.Runtime
             }
         }
 
-        public void AddMsg(string msg)
+        //public void AddMsg(string msg)
+        public void AddMsg(Packet packet)
         {
             //Debug.Log("Message WAS: " + gameObjectMessages);
             //May need to put race condition blocks here.
+
+            Debug.Log($"yoyo: adding packet of length {packet.Length()} to the waiting queue");
+
             lock (_lock)
             {
-                GameObjectMessages += (msg + "\n");
+                //GameObjectMessages += (msg + "\n");
+                GameObjectPackets.Enqueue(packet);
                 lock (Session.WaitingLock)
                 {
                     Session.MessageWaiting = true;
@@ -128,10 +135,12 @@ namespace Yoyo.Runtime
             //Debug.Log("Message IS NOW: " + gameObjectMessages);
         }
 
-        public void Net_Update(string type, string var, string value)
+        //public void Net_Update(PacketType type, string var, string value)
+        public void Net_Update(PacketType type, Packet packet)
         {
             //Get components for network behaviours
             //Destroy self if owner connection is done.
+            Debug.Log("In net update");
             try
             {
                 if (Session.Environment == YoyoEnvironment.Server && Session.Connections.ContainsKey(Owner) == false && Owner != -1)
@@ -149,19 +158,22 @@ namespace Yoyo.Runtime
                 {
                     Session = GameObject.FindObjectOfType<YoyoSession>();
                 }
-                if ((Session.Environment == YoyoEnvironment.Server && type == "COMMAND")
-                    || (Session.Environment == YoyoEnvironment.Client && type == "UPDATE"))
+                if ((Session.Environment == YoyoEnvironment.Server && type == PacketType.Command)
+                    || (Session.Environment == YoyoEnvironment.Client && type == PacketType.Update))
                     {
                         //NetworkBehaviour[] myNets = gameObject.GetComponents<NetworkBehaviour>();
                         for (int i = 0; i < _networkBehaviours.Count; i++)
                         {
-                            _networkBehaviours[i].HandleMessage(var, value);
+                            Debug.Log("Passing to network behaviour #" + i, _networkBehaviours[i]);
+                            // ! this will break for more than one read
+                            //_networkBehaviours[i].HandleMessage(var, value);
+                            _networkBehaviours[i].HandleMessage(new Packet(packet));
                         }
                     }
             }
             catch (System.Exception e)
             {
-                Debug.Log("Game Object "+name+" Caught Exception: " + e.ToString());
+                Debug.Log("Game Object "+name+" Caught Exception: " + e.ToString(), gameObject);
                 //This can happen if myCore has not been set.  
                 //I am not sure how this is possible, but it should be good for the next round.
             }
@@ -169,7 +181,10 @@ namespace Yoyo.Runtime
 
         public void NotifyDirty()
         {
-            this.AddMsg("DIRTY#" + Identifier);
+            Packet packet = new Packet(0, (uint)PacketType.Dirty);
+            packet.Write(Identifier);
+            //this.AddMsg("DIRTY#" + Identifier);
+            this.AddMsg(packet);
         }
 	}
 }

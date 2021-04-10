@@ -21,6 +21,8 @@ namespace Yoyo.Runtime
 			//public Connections;
 		}
 
+        private object _sendLock = new object();
+
         private Socket _tcpListener;
 
 		/// <summary>
@@ -32,6 +34,8 @@ namespace Yoyo.Runtime
         public void StartServer()
         {
 			if (IsConnected) return;
+
+            Debug.Log("yoyo - starting server");
 
 			//If we are listening then we are the server.
             _environment = YoyoEnvironment.Server;
@@ -84,6 +88,9 @@ namespace Yoyo.Runtime
             Socket handler = listener.EndAccept(ar);
 			YoyoSession session = state.Session;
 
+            Debug.Log("yoyo - incoming connection...");
+            session.CurrentlyConnecting = true;
+
 			// todo: this will permanently block new joins unless listen is called again...?
 			if (!state.Session.CanJoin)
 			{
@@ -95,52 +102,83 @@ namespace Yoyo.Runtime
             	listener.BeginAccept(AcceptCallback, state);
 			}
 
-            TcpConnection temp = new TcpConnection(session.ConnectionCount, handler, session);
+            TcpConnection temp = new TcpConnection(session.TcpParameters, session.ConnectionCount, handler, session);
             session.ConnectionCount++;
             lock (session._conLock)
             {
                 session.Connections.Add(temp.PlayerId, temp);
             }
-            session.CurrentlyConnecting = true;
 
 			//CurrentlyConnecting = false;
             if (!session.Connections.ContainsKey(session.ConnectionCount - 1))
             {
                 //Connection was not fully established.
 				// todo: handle
+                Debug.Log("yoyo - connection was not fully established");
+                session.CurrentlyConnecting = false;
 				return;
             }
 
 			// there was a waitforseconds here, not sure why
 
-			session.Connections[session.ConnectionCount - 1].Send(Encoding.ASCII.GetBytes("PLAYERID#" + session.Connections[session.ConnectionCount - 1].PlayerId + "\n"));
+			//session.Connections[session.ConnectionCount - 1].Send(Encoding.ASCII.GetBytes("PLAYERID#" + session.Connections[session.ConnectionCount - 1].PlayerId + "\n"));
+            Packet idPacket = new Packet(0, (uint)PacketType.PlayerId);
+            idPacket.Write(session.Connections[session.ConnectionCount - 1].PlayerId);
+			session.Connections[session.ConnectionCount - 1].Send(idPacket);
+
+            Debug.Log("yoyo - sent packet assigning player id " + session.Connections[session.ConnectionCount - 1].PlayerId);
+
 			// todo: start receive
-			session.StartCoroutine(session.Connections[session.ConnectionCount - 1].TCPRecv());
+            session.Connections[session.ConnectionCount - 1].BeginReceive();
+            //ThreadManager.ExecuteOnMainThread(() => session.StartCoroutine(session.Connections[session.ConnectionCount - 1].TCPRecv()));
+
+            Debug.Log("b");
 
 			//Udpate all current network objects
-            foreach (KeyValuePair<int,NetworkIdentifier> entry in session.NetObjects)
+            foreach (KeyValuePair<int, NetworkIdentifier> entry in session.NetObjects)
             {//This will create a custom create string for each existing object in the game.
-                string tempRot = entry.Value.transform.rotation.ToString();
-                tempRot = tempRot.Replace(',', '#');
-                tempRot = tempRot.Replace('(', '#');
-                tempRot = tempRot.Replace(')', '\0');            
+            //     string tempRot = entry.Value.transform.rotation.ToString();
+            //     tempRot = tempRot.Replace(',', '#');
+            //     tempRot = tempRot.Replace('(', '#');
+            //     tempRot = tempRot.Replace(')', '\0');            
+            //     string MSG = "CREATE#" + entry.Value.Type + "#" + entry.Value.Owner +
+            //    "#" + entry.Value.Identifier + "#" + entry.Value.transform.position.x.ToString("n2") + 
+            //    "#" + entry.Value.transform.position.y.ToString("n2") + "#" 
+            //    + entry.Value.transform.position.z.ToString("n2") + tempRot+"\n";
+            //     session.Connections[session.ConnectionCount - 1].Send(Encoding.ASCII.GetBytes(MSG));
 
-                string MSG = "CREATE#" + entry.Value.Type + "#" + entry.Value.Owner +
-               "#" + entry.Value.Identifier + "#" + entry.Value.transform.position.x.ToString("n2") + 
-               "#" + entry.Value.transform.position.y.ToString("n2") + "#" 
-               + entry.Value.transform.position.z.ToString("n2") + tempRot+"\n";
-                session.Connections[session.ConnectionCount - 1].Send(Encoding.ASCII.GetBytes(MSG));
+                // ! causes issues
+                lock (session._sendLock)
+                {
+                    Packet createPacket = new Packet(0, (uint)PacketType.Create);
+
+                    createPacket.Write(entry.Value.Type);
+                    createPacket.Write(entry.Value.Owner);
+                    createPacket.Write(entry.Value.Identifier);
+                    //createPacket.Write(entry.Value.transform.position);
+                    createPacket.Write(Vector3.zero);
+                    //createPacket.Write(entry.Value.transform.rotation);
+                    createPacket.Write(Quaternion.identity);
+
+                    session.Connections[session.ConnectionCount - 1].Send(createPacket);
+
+                    Debug.Log("yoyo - sent packet creating object type " + entry.Value.Type);
+                }
             }
 
+            Debug.Log("yoyo - sending packet to create network player manager");
+
             //Create NetworkPlayerManager
-            session.NetCreateObject(-1, session.ConnectionCount - 1, new Vector3(session.Connections[session.ConnectionCount -1].PlayerId*2-3,0,0));
+            ThreadManager.ExecuteOnMainThread(() => session.NetCreateObject(-1, session.ConnectionCount - 1));
+            //session.NetCreateObject(-1, session.ConnectionCount - 1);
+            session.CurrentlyConnecting = false;
         }
 
         public void ListenCallBack(System.IAsyncResult ar)
         {
             Socket listener = (Socket)ar.AsyncState;
             Socket handler = listener.EndAccept(ar);
-            TcpConnection temp = new TcpConnection(ConnectionCount, handler, this);
+            TcpConnection temp = new TcpConnection(_tcpParameters, ConnectionCount, handler, this);
             ConnectionCount++;
             lock (_conLock)
             {
@@ -183,14 +221,24 @@ namespace Yoyo.Runtime
                     temp.GetComponent<NetworkIdentifier>().Type = type;
                     NetObjects[NetObjectCount] = temp.GetComponent<NetworkIdentifier>();
                     NetObjectCount++;
-                    string MSG = "CREATE#" + type + "#" + ownMe +
-                    "#" + (NetObjectCount - 1) + "#" + initPos.x.ToString("n2") + "#" +
-                    initPos.y.ToString("n2") + "#" + initPos.z.ToString("n2")+"#"+
-                    rotation.x.ToString("n2")+"#" + rotation.y.ToString("n2") + "#" + rotation.z.ToString("n2") + "#" + rotation.w.ToString("n2")+ "\n";
+
+                    Packet createPacket = new Packet(0, (uint)PacketType.Create);
+                    createPacket.Write(type);
+                    createPacket.Write(ownMe);
+                    createPacket.Write(NetObjectCount - 1);
+                    createPacket.Write(initPos);
+                    createPacket.Write(rotation);
+                    // string MSG = "CREATE#" + type + "#" + ownMe +
+                    // "#" + (NetObjectCount - 1) + "#" + initPos.x.ToString("n2") + "#" +
+                    // initPos.y.ToString("n2") + "#" + initPos.z.ToString("n2")+"#"+
+                    // rotation.x.ToString("n2")+"#" + rotation.y.ToString("n2") + "#" + rotation.z.ToString("n2") + "#" + rotation.w.ToString("n2")+ "\n";
                     lock(_masterMessage)
                     {
-                        MasterMessage += MSG;
+                        //MasterMessage += MSG;
+                        MasterPacket.Enqueue(createPacket);
                     }
+                    Debug.Log($"yoyo - added create packet to master packet (type: {type}, owner: {ownMe}, netId: {NetObjectCount - 1})");
+
                     foreach(NetworkBehaviour n in temp.GetComponents<NetworkBehaviour>())
                     {
                         //Force update to all clients.
@@ -220,10 +268,14 @@ namespace Yoyo.Runtime
             {
                 //Already been destroyed.
             }
-            string msg = "DELETE#" + netIDBad+"\n";
+            //string msg = "DELETE#" + netIDBad+"\n";
+            Packet deletePacket = new Packet(0, (uint)PacketType.Destroy);
+            deletePacket.Write(netIDBad);
+
             lock(_masterMessage)
             {
-                MasterMessage += msg;
+                //MasterMessage += msg;
+                MasterPacket.Enqueue(deletePacket);
             }
             
         }

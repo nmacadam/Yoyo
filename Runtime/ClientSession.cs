@@ -19,6 +19,7 @@ namespace Yoyo.Runtime
         {
             if (!IsConnected)
             {
+                Debug.Log("yoyo - starting client");
                 StartCoroutine(ConnectingClient());
             }
         }
@@ -42,7 +43,8 @@ namespace Yoyo.Runtime
                 yield return new WaitForSeconds(MasterTimer);
             }
             //yield return new WaitUntil(() => CurrentlyConnecting);
-            StartCoroutine(Connections[0].TCPRecv());  //It is 0 on the client because we only have 1 socket.
+            //StartCoroutine(Connections[0].TCPRecv());  //It is 0 on the client because we only have 1 socket.
+            Connections[0].BeginReceive();
             StartCoroutine(SlowUpdate());  //This will allow the client to send messages to the server.
         }
 
@@ -50,7 +52,7 @@ namespace Yoyo.Runtime
         {
             // Client will use the con list (but only have one entry).
             _environment = YoyoEnvironment.Client;
-            TcpConnection temp = new TcpConnection(0, (Socket)ar.AsyncState, this);
+            TcpConnection temp = new TcpConnection(_tcpParameters, 0, (Socket)ar.AsyncState, this);
             temp.TCPCon.EndConnect(ar);//This finishes the TCP connection (DOES NOT DISCONNECT)    
             IsConnected = true;
             Connections.Add(0, temp);
