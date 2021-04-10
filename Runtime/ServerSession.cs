@@ -139,8 +139,10 @@ namespace Yoyo.Runtime
                     createPacket.Write(entry.Value.Type);
                     createPacket.Write(entry.Value.Owner);
                     createPacket.Write(entry.Value.Identifier);
-                    createPacket.Write(entry.Value.transform.position);
-                    createPacket.Write(entry.Value.transform.rotation);
+                    //createPacket.Write(entry.Value.transform.position);
+                    //createPacket.Write(entry.Value.transform.rotation);
+                    createPacket.Write(Vector3.zero);
+                    createPacket.Write(Quaternion.identity);
 
                     session.Connections[session.ConnectionCount - 1].Send(createPacket);
 
