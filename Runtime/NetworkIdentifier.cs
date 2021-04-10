@@ -144,7 +144,7 @@ namespace Yoyo.Runtime
             {
                 if (Session.Environment == YoyoEnvironment.Server && Session.Connections.ContainsKey(Owner) == false && Owner != -1)
                 {
-                    Session.NetDestroyObject(Identifier);
+                    Session.NetDestroy(Identifier);
                 }
             }
             catch (System.NullReferenceException)

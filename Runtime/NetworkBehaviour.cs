@@ -19,7 +19,6 @@ namespace Yoyo.Runtime
         public bool IsServer => NetId.Session.Environment == YoyoEnvironment.Server;
         public bool IsLocalPlayer => NetId.IsLocalPlayer;
 
-        //public abstract void HandleMessage(string flag, string value);
         public abstract void HandleMessage(Packet packet);
         protected virtual IEnumerator SlowUpdate()
         {
@@ -30,6 +29,7 @@ namespace Yoyo.Runtime
             }
         }
 
+        protected virtual void NetAwake() {}
         protected virtual void NetStart() {}
         protected virtual void NetUpdate() {}
 
@@ -47,58 +47,20 @@ namespace Yoyo.Runtime
             return packet;
         }
 
-        //public void SendCommand(string var, string value)
         public void SendCommand(Packet packet)
         {
             if (NetId.Session != null && IsClient && IsLocalPlayer)
             {
                 NetId.AddMsg(packet);
             }
-            // // ! this will probably break
-            // var = var.Replace('#', ' ');
-            // var = var.Replace('\n', ' ');
-            // value = value.Replace('#', ' ');
-            // value = value.Replace('\n', ' ');
-
-            // // ! might also break
-            // if (NetId.Session != null && IsClient && IsLocalPlayer)// && NetId.GameObjectMessages.Contains(var) == false)
-            // {
-            //     // string msg = "COMMAND#" + NetId.Identifier + "#" + var + "#" + value;
-            //     // NetId.AddMsg(msg);
-            //     Packet packet = new Packet(0, (uint)PacketType.Command);
-            //     packet.Write(NetId.Identifier);
-            //     packet.Write(var);
-            //     packet.Write(value);
-
-            //     NetId.AddMsg(packet);
-            // }
         }
 
-        //public void SendUpdate(string var, string value)
         public void SendUpdate(Packet packet)
         {
             if (NetId.Session != null && IsServer)
             {
                 NetId.AddMsg(packet);
             }
-            // // ! this will probably break
-            // var = var.Replace('#', ' ');
-            // var = var.Replace('\n', ' ');
-            // value = value.Replace('#', ' ');
-            // value = value.Replace('\n', ' ');
-
-            // // ! might also break
-            // if (NetId.Session != null && IsServer)// && NetId.GameObjectMessages.Contains(var)==false)
-            // {
-            //     // string msg = "UPDATE#" + NetId.Identifier + "#" + var + "#" + value;
-            //     // NetId.AddMsg(msg);
-            //     Packet packet = new Packet(0, (uint)PacketType.Update);
-            //     packet.Write(NetId.Identifier);
-            //     packet.Write(var);
-            //     packet.Write(value);
-                
-            //     NetId.AddMsg(packet);
-            // }
         }
 
         private void OnEnable() 
@@ -120,6 +82,7 @@ namespace Yoyo.Runtime
 
             yield return new WaitUntil(() => NetId.IsInitialized);
             
+            NetAwake();
             NetStart();
             StartCoroutine(SlowUpdate());
         }

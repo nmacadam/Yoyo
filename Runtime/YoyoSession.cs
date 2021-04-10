@@ -198,7 +198,7 @@ namespace Yoyo.Runtime
                 //Now I can remove the netObjs from the dictionary.
                 for (int i = 0; i < badObjs.Count; i++)
                 {
-                    NetDestroyObject(badObjs[i]);
+                    NetDestroy(badObjs[i]);
                 }
             }
         }

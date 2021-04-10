@@ -121,33 +121,17 @@ namespace Yoyo.Runtime
 
 			// there was a waitforseconds here, not sure why
 
-			//session.Connections[session.ConnectionCount - 1].Send(Encoding.ASCII.GetBytes("PLAYERID#" + session.Connections[session.ConnectionCount - 1].PlayerId + "\n"));
             Packet idPacket = new Packet(0, (uint)PacketType.PlayerId);
             idPacket.Write(session.Connections[session.ConnectionCount - 1].PlayerId);
 			session.Connections[session.ConnectionCount - 1].Send(idPacket);
 
             Debug.Log("yoyo - sent packet assigning player id " + session.Connections[session.ConnectionCount - 1].PlayerId);
 
-			// todo: start receive
             session.Connections[session.ConnectionCount - 1].BeginReceive();
-            //ThreadManager.ExecuteOnMainThread(() => session.StartCoroutine(session.Connections[session.ConnectionCount - 1].TCPRecv()));
 
-            Debug.Log("b");
-
-			//Udpate all current network objects
+			// Update all current network objects
             foreach (KeyValuePair<int, NetworkIdentifier> entry in session.NetObjects)
-            {//This will create a custom create string for each existing object in the game.
-            //     string tempRot = entry.Value.transform.rotation.ToString();
-            //     tempRot = tempRot.Replace(',', '#');
-            //     tempRot = tempRot.Replace('(', '#');
-            //     tempRot = tempRot.Replace(')', '\0');            
-            //     string MSG = "CREATE#" + entry.Value.Type + "#" + entry.Value.Owner +
-            //    "#" + entry.Value.Identifier + "#" + entry.Value.transform.position.x.ToString("n2") + 
-            //    "#" + entry.Value.transform.position.y.ToString("n2") + "#" 
-            //    + entry.Value.transform.position.z.ToString("n2") + tempRot+"\n";
-            //     session.Connections[session.ConnectionCount - 1].Send(Encoding.ASCII.GetBytes(MSG));
-
-                // ! causes issues
+            {
                 lock (session._sendLock)
                 {
                     Packet createPacket = new Packet(0, (uint)PacketType.Create);
@@ -155,10 +139,8 @@ namespace Yoyo.Runtime
                     createPacket.Write(entry.Value.Type);
                     createPacket.Write(entry.Value.Owner);
                     createPacket.Write(entry.Value.Identifier);
-                    //createPacket.Write(entry.Value.transform.position);
-                    createPacket.Write(Vector3.zero);
-                    //createPacket.Write(entry.Value.transform.rotation);
-                    createPacket.Write(Quaternion.identity);
+                    createPacket.Write(entry.Value.transform.position);
+                    createPacket.Write(entry.Value.transform.rotation);
 
                     session.Connections[session.ConnectionCount - 1].Send(createPacket);
 
@@ -168,23 +150,9 @@ namespace Yoyo.Runtime
 
             Debug.Log("yoyo - sending packet to create network player manager");
 
-            //Create NetworkPlayerManager
-            ThreadManager.ExecuteOnMainThread(() => session.NetCreateObject(-1, session.ConnectionCount - 1));
-            //session.NetCreateObject(-1, session.ConnectionCount - 1);
+            // Create NetworkPlayerManager
+            ThreadManager.ExecuteOnMainThread(() => session.NetInstantiate(-1, session.ConnectionCount - 1));
             session.CurrentlyConnecting = false;
-        }
-
-        public void ListenCallBack(System.IAsyncResult ar)
-        {
-            Socket listener = (Socket)ar.AsyncState;
-            Socket handler = listener.EndAccept(ar);
-            TcpConnection temp = new TcpConnection(_tcpParameters, ConnectionCount, handler, this);
-            ConnectionCount++;
-            lock (_conLock)
-            {
-                Connections.Add(temp.PlayerId, temp);
-            }
-            CurrentlyConnecting = true;
         }
 
         public void CloseGame()
@@ -201,51 +169,47 @@ namespace Yoyo.Runtime
         /// NetCreateObject -> creates an object across the network
         /// NetDestroyObject -> Destroys an object across the network
         /// </summary>
-        public GameObject NetCreateObject(int type, int ownMe, Vector3 initPos = new Vector3() , Quaternion rotation = new Quaternion())
+        public GameObject NetInstantiate(int contractIndex, int owner, Vector3 initPos = new Vector3() , Quaternion rotation = new Quaternion())
         {
             if (Environment == YoyoEnvironment.Server)
             {
-                GameObject temp;
+                GameObject go;
                 lock(ObjLock)
                 {
-                    if (type != -1)
+                    if (contractIndex != -1)
                     {
-                        temp = GameObject.Instantiate(ContractPrefabs[type], initPos, rotation);
+                        go = GameObject.Instantiate(ContractPrefabs[contractIndex], initPos, rotation);
                     }
                     else
                     {
-                        temp = GameObject.Instantiate(NetworkPlayerManager, initPos, rotation);
+                        go = GameObject.Instantiate(NetworkPlayerManager, initPos, rotation);
                     }
-                    temp.GetComponent<NetworkIdentifier>().Owner = ownMe;
-                    temp.GetComponent<NetworkIdentifier>().Identifier = NetObjectCount;
-                    temp.GetComponent<NetworkIdentifier>().Type = type;
-                    NetObjects[NetObjectCount] = temp.GetComponent<NetworkIdentifier>();
+                    go.GetComponent<NetworkIdentifier>().Owner = owner;
+                    go.GetComponent<NetworkIdentifier>().Identifier = NetObjectCount;
+                    go.GetComponent<NetworkIdentifier>().Type = contractIndex;
+                    NetObjects[NetObjectCount] = go.GetComponent<NetworkIdentifier>();
                     NetObjectCount++;
 
                     Packet createPacket = new Packet(0, (uint)PacketType.Create);
-                    createPacket.Write(type);
-                    createPacket.Write(ownMe);
+                    createPacket.Write(contractIndex);
+                    createPacket.Write(owner);
                     createPacket.Write(NetObjectCount - 1);
                     createPacket.Write(initPos);
                     createPacket.Write(rotation);
-                    // string MSG = "CREATE#" + type + "#" + ownMe +
-                    // "#" + (NetObjectCount - 1) + "#" + initPos.x.ToString("n2") + "#" +
-                    // initPos.y.ToString("n2") + "#" + initPos.z.ToString("n2")+"#"+
-                    // rotation.x.ToString("n2")+"#" + rotation.y.ToString("n2") + "#" + rotation.z.ToString("n2") + "#" + rotation.w.ToString("n2")+ "\n";
+
                     lock(_masterMessage)
                     {
-                        //MasterMessage += MSG;
                         MasterPacket.Enqueue(createPacket);
                     }
-                    Debug.Log($"yoyo - added create packet to master packet (type: {type}, owner: {ownMe}, netId: {NetObjectCount - 1})");
+                    Debug.Log($"yoyo - added create packet to master packet (type: {contractIndex}, owner: {owner}, netId: {NetObjectCount - 1})");
 
-                    foreach(NetworkBehaviour n in temp.GetComponents<NetworkBehaviour>())
+                    foreach(NetworkBehaviour n in go.GetComponents<NetworkBehaviour>())
                     {
                         //Force update to all clients.
                         n.IsDirty = true;
                     }
                 }
-                return temp;
+                return go;
             }
             else
             {
@@ -254,7 +218,7 @@ namespace Yoyo.Runtime
 
         }
 
-        public void NetDestroyObject(int netIDBad)
+        public void NetDestroy(int netIDBad)
         {
             try
             {
@@ -266,32 +230,16 @@ namespace Yoyo.Runtime
             }
             catch
             {
-                //Already been destroyed.
+                // Already been destroyed.
             }
-            //string msg = "DELETE#" + netIDBad+"\n";
             Packet deletePacket = new Packet(0, (uint)PacketType.Destroy);
             deletePacket.Write(netIDBad);
 
             lock(_masterMessage)
             {
-                //MasterMessage += msg;
                 MasterPacket.Enqueue(deletePacket);
             }
             
         }
-		// public void CloseServer()
-		// {}
-
-		// public void Listen()
-		// {}
-
-		// public void StopListening()
-		// {}
-
-		// public void NetInstantiate() 
-		// {}
-
-		// public void NetDestroy() 
-		// {}
 	}
 }
