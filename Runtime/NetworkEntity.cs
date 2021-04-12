@@ -25,7 +25,24 @@ namespace Yoyo.Runtime
         private YoyoSession _session;
         private List<NetworkBehaviour> _networkBehaviours = new List<NetworkBehaviour>();
 
-        public YoyoSession Session { get => _session; private set => _session = value; }
+        public YoyoSession Session 
+        { 
+            get
+            {
+                if (_session == null)
+                {
+                    _session = GameObject.FindObjectOfType<YoyoSession>();
+                    if(_session == null)
+                    {
+                        throw new System.Exception("There is no network core in the scene!");
+                    }
+                }
+
+                return _session;
+            }
+            private set => _session = value; 
+        }
+        
         public bool IsClient => Session.Environment == YoyoEnvironment.Client;
         public bool IsServer => Session.Environment == YoyoEnvironment.Server;
         public bool IsLocalPlayer => Owner == Session.LocalPlayerId;

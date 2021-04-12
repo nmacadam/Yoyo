@@ -129,26 +129,57 @@ namespace Yoyo.Runtime
 
             session.Connections[session.ConnectionCount - 1].BeginReceive();
 
-			// Update all current network objects
-            foreach (KeyValuePair<int, NetworkEntity> entry in session.NetEntities)
+            // Need to execute this on main thread because accessing the transform of the object causes issues otherwise
+            ThreadManager.ExecuteOnMainThread(() => 
             {
-                lock (session._sendLock)
+                // Update all current network objects
+                foreach (KeyValuePair<int, NetworkEntity> entry in session.NetEntities)
                 {
-                    Packet createPacket = new Packet(0, (uint)PacketType.Create);
+                    Vector3 position = entry.Value.transform.position;
+                    Quaternion rotation = entry.Value.transform.rotation;
 
-                    createPacket.Write(entry.Value.Type);
-                    createPacket.Write(entry.Value.Owner);
-                    createPacket.Write(entry.Value.Identifier);
-                    //createPacket.Write(entry.Value.transform.position);
-                    //createPacket.Write(entry.Value.transform.rotation);
-                    createPacket.Write(Vector3.zero);
-                    createPacket.Write(Quaternion.identity);
+                    lock (session._sendLock)
+                    {
+                        Packet createPacket = new Packet(0, (uint)PacketType.Create);
 
-                    session.Connections[session.ConnectionCount - 1].Send(createPacket);
+                        createPacket.Write(entry.Value.Type);
+                        createPacket.Write(entry.Value.Owner);
+                        createPacket.Write(entry.Value.Identifier);
+                        createPacket.Write(entry.Value.transform.position);
+                        createPacket.Write(entry.Value.transform.rotation);
+                        //createPacket.Write(Vector3.zero);
+                        //createPacket.Write(Quaternion.identity);
 
-                    Debug.Log("yoyo - sent packet creating object type " + entry.Value.Type);
+                        session.Connections[session.ConnectionCount - 1].Send(createPacket);
+                    }
+                    
+                    Debug.Log("yoyo - sent packet creating object type " + entry.Value.Type + $" at ({position})");
                 }
-            }
+            });
+
+			// // Update all current network objects
+            // foreach (KeyValuePair<int, NetworkEntity> entry in session.NetEntities)
+            // {
+            //     Vector3 position = entry.Value.transform.position;
+            //     //Quaternion rotation = entry.Value.transform.rotation;
+
+            //     lock (session._sendLock)
+            //     {
+            //         Packet createPacket = new Packet(0, (uint)PacketType.Create);
+
+            //         createPacket.Write(entry.Value.Type);
+            //         createPacket.Write(entry.Value.Owner);
+            //         createPacket.Write(entry.Value.Identifier);
+            //         //createPacket.Write(entry.Value.transform.position);
+            //         //createPacket.Write(entry.Value.transform.rotation);
+            //         createPacket.Write(Vector3.zero);
+            //         createPacket.Write(Quaternion.identity);
+
+            //         session.Connections[session.ConnectionCount - 1].Send(createPacket);
+            //     }
+                
+            //     Debug.Log("yoyo - sent packet creating object type " + entry.Value.Type + $" at ({position})");
+            // }
 
             Debug.Log("yoyo - sending packet to create network player manager");
 
