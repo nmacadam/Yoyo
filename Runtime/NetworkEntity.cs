@@ -133,12 +133,12 @@ namespace Yoyo.Runtime
 
             foreach (var subscriber in GetComponents<INetworkSubscriber>())
             {
-                subscriber.OnEntityInitialized();
+                subscriber.OnEntityInitialized(this);
             }
 
             foreach (var subscriber in GetComponentsInChildren<INetworkSubscriber>())
             {
-                subscriber.OnEntityInitialized();
+                subscriber.OnEntityInitialized(this);
             }
         }
 
