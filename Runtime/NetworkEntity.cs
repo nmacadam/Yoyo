@@ -24,6 +24,7 @@ namespace Yoyo.Runtime
 
         private YoyoSession _session;
         private List<NetworkBehaviour> _networkBehaviours = new List<NetworkBehaviour>();
+        private List<INetworkSubscriber> _networkSubscribers = new List<INetworkSubscriber>();
 
         public YoyoSession Session 
         { 
@@ -128,6 +129,16 @@ namespace Yoyo.Runtime
             if (IsClient)
             {
                 NotifyDirty();
+            }
+
+            foreach (var subscriber in GetComponents<INetworkSubscriber>())
+            {
+                subscriber.OnEntityInitialized();
+            }
+
+            foreach (var subscriber in GetComponentsInChildren<INetworkSubscriber>())
+            {
+                subscriber.OnEntityInitialized();
             }
         }
 
