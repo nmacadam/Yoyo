@@ -5,6 +5,6 @@ namespace Yoyo.Runtime
 {
 	public interface INetworkSubscriber
 	{
-		void OnEntityInitialized();
+		void OnEntityInitialized(NetworkEntity entity);
 	}
 }
