@@ -3,20 +3,25 @@
 
 using System.Collections;
 using UnityEngine;
+using Yoyo.Attributes;
 
 namespace Yoyo.Runtime
 {
     public abstract class NetworkBehaviour : MonoBehaviour
     {
-        [SerializeField] private NetworkEntity _entity;
+        [SerializeField, DisableEditing] private NetworkEntity _entity;
+
+        [SerializeField, DisableEditing] private int _behaviourId = -1;
         private bool _dirty = false;
 
-        public NetworkEntity Entity { get => _entity; private set => _entity = value; }
+        public NetworkEntity Entity { get => _entity; set => _entity = value; }
+        public int BehaviourId { get => _behaviourId; set => _behaviourId = value; }
         public bool IsDirty { get => _dirty; set => _dirty = value; }
 
         public bool IsClient => Entity.Session.Environment == YoyoEnvironment.Client;
         public bool IsServer => Entity.Session.Environment == YoyoEnvironment.Server;
         public bool IsLocalPlayer => Entity.IsLocalPlayer;
+
 
         public abstract void HandleMessage(Packet packet);
         protected virtual IEnumerator SlowUpdate()
@@ -36,6 +41,7 @@ namespace Yoyo.Runtime
         {
             Packet packet = new Packet(0, (uint)PacketType.Command);
             packet.Write(Entity.Identifier);
+            packet.Write(BehaviourId);
             return packet;
         }
 
@@ -43,6 +49,7 @@ namespace Yoyo.Runtime
         {
             Packet packet = new Packet(0, (uint)PacketType.Update);
             packet.Write(Entity.Identifier);
+            packet.Write(BehaviourId);
             return packet;
         }
 
