@@ -19,11 +19,11 @@ namespace Yoyo.Runtime
 
         [Header("GameObject Info")]
 		public int Type;
+        [SerializeField] private List<NetworkBehaviour> _networkBehaviours = new List<NetworkBehaviour>();
 
         public Queue<Packet> GameObjectPackets = new Queue<Packet>();
 
         private YoyoSession _session;
-        private List<NetworkBehaviour> _networkBehaviours = new List<NetworkBehaviour>();
         private List<INetworkSubscriber> _networkSubscribers = new List<INetworkSubscriber>();
 
         public YoyoSession Session 
@@ -64,6 +64,23 @@ namespace Yoyo.Runtime
         {
             return _networkBehaviours.Remove(behaviour);
         }
+
+        #if UNITY_EDITOR
+        private void OnValidate() 
+        {
+            List<NetworkBehaviour> behaviours = new List<NetworkBehaviour>();
+            behaviours.AddRange(GetComponentsInChildren<NetworkBehaviour>());
+
+            _networkBehaviours.Clear();
+
+            for (int i = 0; i < behaviours.Count; i++)
+            {
+                behaviours[i].Entity = this;
+                behaviours[i].BehaviourId = i;
+                _networkBehaviours.Add(behaviours[i]);
+            }
+        }
+        #endif
 
         // Use this for initialization
         private void Start()
@@ -185,16 +202,21 @@ namespace Yoyo.Runtime
                 {
                     Session = GameObject.FindObjectOfType<YoyoSession>();
                 }
+
+                int behaviourId = packet.ReadInt();
+
                 if ((Session.Environment == YoyoEnvironment.Server && type == PacketType.Command)
                     || (Session.Environment == YoyoEnvironment.Client && type == PacketType.Update))
                     {
                         //NetworkBehaviour[] myNets = gameObject.GetComponents<NetworkBehaviour>();
                         for (int i = 0; i < _networkBehaviours.Count; i++)
                         {
-                            Debug.Log("Passing to network behaviour #" + i, _networkBehaviours[i]);
-                            // ! this will break for more than one read
-                            //_networkBehaviours[i].HandleMessage(var, value);
-                            _networkBehaviours[i].HandleMessage(new Packet(packet));
+                            if (_networkBehaviours[i].BehaviourId == behaviourId)
+                            {
+                                Debug.Log("Passing to network behaviour #" + i, _networkBehaviours[i]);
+                                //_networkBehaviours[i].HandleMessage(var, value);
+                                _networkBehaviours[i].HandleMessage(new Packet(packet));
+                            }
                         }
                     }
             }
