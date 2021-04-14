@@ -148,11 +148,6 @@ namespace Yoyo.Runtime
                 NotifyDirty();
             }
 
-            foreach (var subscriber in GetComponents<INetworkSubscriber>())
-            {
-                subscriber.OnEntityInitialized(this);
-            }
-
             foreach (var subscriber in GetComponentsInChildren<INetworkSubscriber>())
             {
                 subscriber.OnEntityInitialized(this);
