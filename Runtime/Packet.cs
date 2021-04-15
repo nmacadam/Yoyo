@@ -216,6 +216,13 @@ namespace Yoyo.Runtime
             _buffer.AddRange(BitConverter.GetBytes(_value));
         }
 
+        /// <summary>Adds a double to the packet.</summary>
+        /// <param name="_value">The double to add.</param>
+        public void Write(double _value)
+        {
+            _buffer.AddRange(BitConverter.GetBytes(_value));
+        }
+
         /// <summary>Adds a bool to the packet.</summary>
         /// <param name="_value">The bool to add.</param>
         public void Write(bool _value)
@@ -231,12 +238,16 @@ namespace Yoyo.Runtime
             _buffer.AddRange(Encoding.ASCII.GetBytes(_value)); // Add the string itself
         }
 
+        /// <summary>Adds a Vector2 to the packet.</summary>
+        /// <param name="value">The Vector2 to add.</param>
         public void Write(Vector2 value)
         {
             Write(value.x);
             Write(value.y);
         }
 
+        /// <summary>Adds a Vector3 to the packet.</summary>
+        /// <param name="value">The Vector3 to add.</param>
         public void Write(Vector3 value)
         {
             Write(value.x);
@@ -244,6 +255,8 @@ namespace Yoyo.Runtime
             Write(value.z);
         }
 
+        /// <summary>Adds a Vector4 to the packet.</summary>
+        /// <param name="value">The Vector4 to add.</param>
         public void Write(Vector4 value)
         {
             Write(value.x);
@@ -252,6 +265,8 @@ namespace Yoyo.Runtime
             Write(value.w);
         }
 
+        /// <summary>Adds a Quaternion to the packet.</summary>
+        /// <param name="value">The Quaternion to add.</param>
         public void Write(Quaternion value)
         {
             Write(value.x);
@@ -260,6 +275,8 @@ namespace Yoyo.Runtime
             Write(value.w);
         }
 
+        /// <summary>Adds a Color to the packet.</summary>
+        /// <param name="value">The Color to add.</param>
         public void Write(Color value)
         {
             Write(value.r);
@@ -411,6 +428,27 @@ namespace Yoyo.Runtime
                 {
                     // If _moveReadPos is true
                     _index += 4; // Increase readPos by 4
+                }
+                return _value; // Return the float
+            }
+            else
+            {
+                throw new Exception("Could not read value of type 'float'!");
+            }
+        }
+
+        /// <summary>Reads a double from the packet.</summary>
+        /// <param name="_moveReadPos">Whether or not to move the buffer's read position.</param>
+        public double ReadDouble(bool _moveReadPos = true)
+        {
+            if (_buffer.Count > _index)
+            {
+                // If there are unread bytes
+                double _value = BitConverter.ToDouble(_readableBuffer, _index); // Convert the bytes to a float
+                if (_moveReadPos)
+                {
+                    // If _moveReadPos is true
+                    _index += 8; // Increase readPos by 4
                 }
                 return _value; // Return the float
             }
