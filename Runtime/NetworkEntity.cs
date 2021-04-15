@@ -99,9 +99,9 @@ namespace Yoyo.Runtime
             {
                 //This will ONLY be true if the object was in the scene before the connection
                 yield return new WaitUntil(() => (Session.Environment != YoyoEnvironment.None));
-                yield return new WaitForSeconds(.1f);
+                yield return new WaitForSecondsRealtime(.1f);
             }
-            yield return new WaitForSeconds(.1f);  //This should be here.
+            yield return new WaitForSecondsRealtime(.1f);  //This should be here.
             if (IsClient)
             {
                 //Then we know we need to destroy this object and wait for it to be re-created by the server

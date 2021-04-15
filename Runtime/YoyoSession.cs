@@ -307,7 +307,7 @@ namespace Yoyo.Runtime
                 yield return new WaitUntil(() => Connections[0].DidDisconnect);
                 Disconnect(0);
             }
-            yield return new WaitForSeconds(.1f);
+            yield return new WaitForSecondsRealtime(.1f);
         }
 
         private void OnApplicationQuit()
@@ -399,10 +399,10 @@ namespace Yoyo.Runtime
                 //while(!MessageWaiting && MasterMessage == "")
                 while(!MessageWaiting && MasterPacket.Count == 0)
                 {
-                    yield return new WaitForSeconds(MasterTimer);//
+                    yield return new WaitForSecondsRealtime(MasterTimer);//
                 }
                 //yield return new WaitUntil(() => (MessageWaiting || MasterMessage != ""));
-                //yield return new WaitForSeconds(MasterTimer);
+                //yield return new WaitForSecondsRealtime(MasterTimer);
             }
         }
 	}

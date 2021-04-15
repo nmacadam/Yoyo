@@ -43,7 +43,7 @@ namespace Yoyo.Runtime
             // Wait for the client to connect
             while(!CurrentlyConnecting)
             {
-                yield return new WaitForSeconds(MasterTimer);
+                yield return new WaitForSecondsRealtime(MasterTimer);
             }
 
             Connections[0].BeginReceive(); // It is 0 on the client because we only have 1 socket.
