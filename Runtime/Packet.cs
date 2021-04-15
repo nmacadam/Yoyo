@@ -59,12 +59,6 @@ namespace Yoyo.Runtime
 
         public Packet(Packet packet)
         {
-            // ! might need to do an actual copy
-            // _buffer = new List<byte>(packet._buffer);
-            // _readableBuffer = new byte[packet._readableBuffer.Length];
-            // Array.Copy(packet._readableBuffer, _readableBuffer, packet._readableBuffer.Length);
-            // _index = packet._index;
-            
             _buffer = new List<byte>();
             SetBytes(packet.ToArray());
             _index = packet._index;
@@ -77,15 +71,15 @@ namespace Yoyo.Runtime
             Write(packetType);
         }
 
-        public PacketHeader ReadHeader(bool _moveReadPos = true)
+        public PacketHeader ReadHeader(bool moveReadPosition = true)
         {
             if (_buffer.Count > _index)
             {
                 PacketHeader header = new PacketHeader()
                 {
-                    Protocol = ReadUInt(_moveReadPos),
-                    Sequence = ReadUInt(_moveReadPos),
-                    PacketType = ReadUInt(_moveReadPos)
+                    Protocol = ReadUInt(moveReadPosition),
+                    Sequence = ReadUInt(moveReadPosition),
+                    PacketType = ReadUInt(moveReadPosition)
                 };
                 return header;
             }
@@ -95,11 +89,11 @@ namespace Yoyo.Runtime
             }
         }
 
-        public int ReadLength(bool _moveReadPos = true)
+        public int ReadLength(bool moveReadPosition = true)
         {
             if (_buffer.Count > _index)
             {
-                return ReadInt(_moveReadPos);
+                return ReadInt(moveReadPosition);
             }
             else
             {
@@ -111,9 +105,9 @@ namespace Yoyo.Runtime
 
         /// <summary>Sets the packet's content and prepares it to be read.</summary>
         /// <param name="_data">The bytes to add to the packet.</param>
-        public void SetBytes(byte[] _data)
+        public void SetBytes(byte[] data)
         {
-            Write(_data);
+            Write(data);
             _readableBuffer = _buffer.ToArray();
         }
 
@@ -124,10 +118,10 @@ namespace Yoyo.Runtime
         }
 
         /// <summary>Inserts the given int at the start of the buffer.</summary>
-        /// <param name="_value">The int to insert.</param>
-        public void InsertInt(int _value)
+        /// <param name="value">The int to insert.</param>
+        public void InsertInt(int value)
         {
-            _buffer.InsertRange(0, BitConverter.GetBytes(_value)); // Insert the int at the start of the buffer
+            _buffer.InsertRange(0, BitConverter.GetBytes(value)); // Insert the int at the start of the buffer
         }
 
         /// <summary>Gets the packet's content in array form.</summary>
@@ -150,10 +144,10 @@ namespace Yoyo.Runtime
         }
 
         /// <summary>Resets the packet instance to allow it to be reused.</summary>
-        /// <param name="_shouldReset">Whether or not to reset the packet.</param>
-        public void Reset(bool _shouldReset = true)
+        /// <param name="shouldReset">Whether or not to reset the packet.</param>
+        public void Reset(bool shouldReset = true)
         {
-            if (_shouldReset)
+            if (shouldReset)
             {
                 _buffer.Clear(); // Clear buffer
                 _readableBuffer = null;
@@ -168,74 +162,74 @@ namespace Yoyo.Runtime
         #region Writing
 
         /// <summary>Adds a byte to the packet.</summary>
-        /// <param name="_value">The byte to add.</param>
-        public void Write(byte _value)
+        /// <param name="value">The byte to add.</param>
+        public void Write(byte value)
         {
-            _buffer.Add(_value);
+            _buffer.Add(value);
         }
 
         /// <summary>Adds an array of bytes to the packet.</summary>
-        /// <param name="_value">The byte array to add.</param>
-        public void Write(byte[] _value)
+        /// <param name="value">The byte array to add.</param>
+        public void Write(byte[] value)
         {
-            _buffer.AddRange(_value);
+            _buffer.AddRange(value);
         }
 
         /// <summary>Adds a short to the packet.</summary>
-        /// <param name="_value">The short to add.</param>
-        public void Write(short _value)
+        /// <param name="value">The short to add.</param>
+        public void Write(short value)
         {
-            _buffer.AddRange(BitConverter.GetBytes(_value));
+            _buffer.AddRange(BitConverter.GetBytes(value));
         }
 
         /// <summary>Adds an uint to the packet.</summary>
-        /// <param name="_value">The uint to add.</param>
-        public void Write(uint _value)
+        /// <param name="value">The uint to add.</param>
+        public void Write(uint value)
         {
-            _buffer.AddRange(BitConverter.GetBytes(_value));
+            _buffer.AddRange(BitConverter.GetBytes(value));
         }
 
         /// <summary>Adds an int to the packet.</summary>
-        /// <param name="_value">The int to add.</param>
-        public void Write(int _value)
+        /// <param name="value">The int to add.</param>
+        public void Write(int value)
         {
-            _buffer.AddRange(BitConverter.GetBytes(_value));
+            _buffer.AddRange(BitConverter.GetBytes(value));
         }
 
         /// <summary>Adds a long to the packet.</summary>
-        /// <param name="_value">The long to add.</param>
-        public void Write(long _value)
+        /// <param name="value">The long to add.</param>
+        public void Write(long value)
         {
-            _buffer.AddRange(BitConverter.GetBytes(_value));
+            _buffer.AddRange(BitConverter.GetBytes(value));
         }
 
         /// <summary>Adds a float to the packet.</summary>
-        /// <param name="_value">The float to add.</param>
-        public void Write(float _value)
+        /// <param name="value">The float to add.</param>
+        public void Write(float value)
         {
-            _buffer.AddRange(BitConverter.GetBytes(_value));
+            _buffer.AddRange(BitConverter.GetBytes(value));
         }
 
         /// <summary>Adds a double to the packet.</summary>
-        /// <param name="_value">The double to add.</param>
-        public void Write(double _value)
+        /// <param name="value">The double to add.</param>
+        public void Write(double value)
         {
-            _buffer.AddRange(BitConverter.GetBytes(_value));
+            _buffer.AddRange(BitConverter.GetBytes(value));
         }
 
         /// <summary>Adds a bool to the packet.</summary>
-        /// <param name="_value">The bool to add.</param>
-        public void Write(bool _value)
+        /// <param name="value">The bool to add.</param>
+        public void Write(bool value)
         {
-            _buffer.AddRange(BitConverter.GetBytes(_value));
+            _buffer.AddRange(BitConverter.GetBytes(value));
         }
 
         /// <summary>Adds a string to the packet.</summary>
-        /// <param name="_value">The string to add.</param>
-        public void Write(string _value)
+        /// <param name="value">The string to add.</param>
+        public void Write(string value)
         {
-            Write(_value.Length); // Add the length of the string to the packet
-            _buffer.AddRange(Encoding.ASCII.GetBytes(_value)); // Add the string itself
+            Write(value.Length); // Add the length of the string to the packet
+            _buffer.AddRange(Encoding.ASCII.GetBytes(value)); // Add the string itself
         }
 
         /// <summary>Adds a Vector2 to the packet.</summary>
@@ -290,19 +284,19 @@ namespace Yoyo.Runtime
         #region Reading
 
         /// <summary>Reads a byte from the packet.</summary>
-        /// <param name="_moveReadPos">Whether or not to move the buffer's read position.</param>
-        public byte ReadByte(bool _moveReadPos = true)
+        /// <param name="moveReadPosition">Whether or not to move the buffer's read position.</param>
+        public byte ReadByte(bool moveReadPosition = true)
         {
             if (_buffer.Count > _index)
             {
                 // If there are unread bytes
-                byte _value = _readableBuffer[_index]; // Get the byte at readPos' position
-                if (_moveReadPos)
+                byte value = _readableBuffer[_index]; // Get the byte at readPos' position
+                if (moveReadPosition)
                 {
-                    // If _moveReadPos is true
+                    // If moveReadPosition is true
                     _index += 1; // Increase readPos by 1
                 }
-                return _value; // Return the byte
+                return value; // Return the byte
             }
             else
             {
@@ -311,20 +305,20 @@ namespace Yoyo.Runtime
         }
 
         /// <summary>Reads an array of bytes from the packet.</summary>
-        /// <param name="_length">The length of the byte array.</param>
-        /// <param name="_moveReadPos">Whether or not to move the buffer's read position.</param>
-        public byte[] ReadBytes(int _length, bool _moveReadPos = true)
+        /// <param name="length">The length of the byte array.</param>
+        /// <param name="moveReadPosition">Whether or not to move the buffer's read position.</param>
+        public byte[] ReadBytes(int length, bool moveReadPosition = true)
         {
             if (_buffer.Count > _index)
             {
                 // If there are unread bytes
-                byte[] _value = _buffer.GetRange(_index, _length).ToArray(); // Get the bytes at readPos' position with a range of _length
-                if (_moveReadPos)
+                byte[] value = _buffer.GetRange(_index, length).ToArray(); // Get the bytes at readPos' position with a range of _length
+                if (moveReadPosition)
                 {
-                    // If _moveReadPos is true
-                    _index += _length; // Increase readPos by _length
+                    // If moveReadPosition is true
+                    _index += length; // Increase readPos by _length
                 }
-                return _value; // Return the bytes
+                return value; // Return the bytes
             }
             else
             {
@@ -333,19 +327,19 @@ namespace Yoyo.Runtime
         }
 
         /// <summary>Reads a short from the packet.</summary>
-        /// <param name="_moveReadPos">Whether or not to move the buffer's read position.</param>
-        public short ReadShort(bool _moveReadPos = true)
+        /// <param name="moveReadPosition">Whether or not to move the buffer's read position.</param>
+        public short ReadShort(bool moveReadPosition = true)
         {
             if (_buffer.Count > _index)
             {
                 // If there are unread bytes
-                short _value = BitConverter.ToInt16(_readableBuffer, _index); // Convert the bytes to a short
-                if (_moveReadPos)
+                short value = BitConverter.ToInt16(_readableBuffer, _index); // Convert the bytes to a short
+                if (moveReadPosition)
                 {
-                    // If _moveReadPos is true and there are unread bytes
+                    // If moveReadPosition is true and there are unread bytes
                     _index += 2; // Increase readPos by 2
                 }
-                return _value; // Return the short
+                return value; // Return the short
             }
             else
             {
@@ -354,19 +348,19 @@ namespace Yoyo.Runtime
         }
 
         /// <summary>Reads an uint from the packet.</summary>
-        /// <param name="_moveReadPos">Whether or not to move the buffer's read position.</param>
-        public uint ReadUInt(bool _moveReadPos = true)
+        /// <param name="moveReadPosition">Whether or not to move the buffer's read position.</param>
+        public uint ReadUInt(bool moveReadPosition = true)
         {
             if (_buffer.Count > _index)
             {
                 // If there are unread bytes
-                uint _value = BitConverter.ToUInt32(_readableBuffer, _index); // Convert the bytes to an uint
-                if (_moveReadPos)
+                uint value = BitConverter.ToUInt32(_readableBuffer, _index); // Convert the bytes to an uint
+                if (moveReadPosition)
                 {
-                    // If _moveReadPos is true
+                    // If moveReadPosition is true
                     _index += 4; // Increase readPos by 4
                 }
-                return _value; // Return the uint
+                return value; // Return the uint
             }
             else
             {
@@ -375,19 +369,19 @@ namespace Yoyo.Runtime
         }
 
         /// <summary>Reads an int from the packet.</summary>
-        /// <param name="_moveReadPos">Whether or not to move the buffer's read position.</param>
-        public int ReadInt(bool _moveReadPos = true)
+        /// <param name="moveReadPosition">Whether or not to move the buffer's read position.</param>
+        public int ReadInt(bool moveReadPosition = true)
         {
             if (_buffer.Count > _index)
             {
                 // If there are unread bytes
-                int _value = BitConverter.ToInt32(_readableBuffer, _index); // Convert the bytes to an int
-                if (_moveReadPos)
+                int value = BitConverter.ToInt32(_readableBuffer, _index); // Convert the bytes to an int
+                if (moveReadPosition)
                 {
-                    // If _moveReadPos is true
+                    // If moveReadPosition is true
                     _index += 4; // Increase readPos by 4
                 }
-                return _value; // Return the int
+                return value; // Return the int
             }
             else
             {
@@ -396,19 +390,19 @@ namespace Yoyo.Runtime
         }
 
         /// <summary>Reads a long from the packet.</summary>
-        /// <param name="_moveReadPos">Whether or not to move the buffer's read position.</param>
-        public long ReadLong(bool _moveReadPos = true)
+        /// <param name="moveReadPosition">Whether or not to move the buffer's read position.</param>
+        public long ReadLong(bool moveReadPosition = true)
         {
             if (_buffer.Count > _index)
             {
                 // If there are unread bytes
-                long _value = BitConverter.ToInt64(_readableBuffer, _index); // Convert the bytes to a long
-                if (_moveReadPos)
+                long value = BitConverter.ToInt64(_readableBuffer, _index); // Convert the bytes to a long
+                if (moveReadPosition)
                 {
-                    // If _moveReadPos is true
+                    // If moveReadPosition is true
                     _index += 8; // Increase readPos by 8
                 }
-                return _value; // Return the long
+                return value; // Return the long
             }
             else
             {
@@ -417,19 +411,19 @@ namespace Yoyo.Runtime
         }
 
         /// <summary>Reads a float from the packet.</summary>
-        /// <param name="_moveReadPos">Whether or not to move the buffer's read position.</param>
-        public float ReadFloat(bool _moveReadPos = true)
+        /// <param name="moveReadPosition">Whether or not to move the buffer's read position.</param>
+        public float ReadFloat(bool moveReadPosition = true)
         {
             if (_buffer.Count > _index)
             {
                 // If there are unread bytes
-                float _value = BitConverter.ToSingle(_readableBuffer, _index); // Convert the bytes to a float
-                if (_moveReadPos)
+                float value = BitConverter.ToSingle(_readableBuffer, _index); // Convert the bytes to a float
+                if (moveReadPosition)
                 {
-                    // If _moveReadPos is true
+                    // If moveReadPosition is true
                     _index += 4; // Increase readPos by 4
                 }
-                return _value; // Return the float
+                return value; // Return the float
             }
             else
             {
@@ -438,19 +432,19 @@ namespace Yoyo.Runtime
         }
 
         /// <summary>Reads a double from the packet.</summary>
-        /// <param name="_moveReadPos">Whether or not to move the buffer's read position.</param>
-        public double ReadDouble(bool _moveReadPos = true)
+        /// <param name="moveReadPosition">Whether or not to move the buffer's read position.</param>
+        public double ReadDouble(bool moveReadPosition = true)
         {
             if (_buffer.Count > _index)
             {
                 // If there are unread bytes
-                double _value = BitConverter.ToDouble(_readableBuffer, _index); // Convert the bytes to a float
-                if (_moveReadPos)
+                double value = BitConverter.ToDouble(_readableBuffer, _index); // Convert the bytes to a float
+                if (moveReadPosition)
                 {
-                    // If _moveReadPos is true
+                    // If moveReadPosition is true
                     _index += 8; // Increase readPos by 4
                 }
-                return _value; // Return the float
+                return value; // Return the float
             }
             else
             {
@@ -459,19 +453,19 @@ namespace Yoyo.Runtime
         }
 
         /// <summary>Reads a bool from the packet.</summary>
-        /// <param name="_moveReadPos">Whether or not to move the buffer's read position.</param>
-        public bool ReadBool(bool _moveReadPos = true)
+        /// <param name="moveReadPosition">Whether or not to move the buffer's read position.</param>
+        public bool ReadBool(bool moveReadPosition = true)
         {
             if (_buffer.Count > _index)
             {
                 // If there are unread bytes
-                bool _value = BitConverter.ToBoolean(_readableBuffer, _index); // Convert the bytes to a bool
-                if (_moveReadPos)
+                bool value = BitConverter.ToBoolean(_readableBuffer, _index); // Convert the bytes to a bool
+                if (moveReadPosition)
                 {
-                    // If _moveReadPos is true
+                    // If moveReadPosition is true
                     _index += 1; // Increase readPos by 1
                 }
-                return _value; // Return the bool
+                return value; // Return the bool
             }
             else
             {
@@ -480,19 +474,19 @@ namespace Yoyo.Runtime
         }
 
         /// <summary>Reads a string from the packet.</summary>
-        /// <param name="_moveReadPos">Whether or not to move the buffer's read position.</param>
-        public string ReadString(bool _moveReadPos = true)
+        /// <param name="moveReadPosition">Whether or not to move the buffer's read position.</param>
+        public string ReadString(bool moveReadPosition = true)
         {
             try
             {
                 int _length = ReadInt(); // Get the length of the string
-                string _value = Encoding.ASCII.GetString(_readableBuffer, _index, _length); // Convert the bytes to a string
-                if (_moveReadPos && _value.Length > 0)
+                string value = Encoding.ASCII.GetString(_readableBuffer, _index, _length); // Convert the bytes to a string
+                if (moveReadPosition && value.Length > 0)
                 {
-                    // If _moveReadPos is true string is not empty
+                    // If moveReadPosition is true string is not empty
                     _index += _length; // Increase readPos by the length of the string
                 }
-                return _value; // Return the string
+                return value; // Return the string
             }
             catch
             {
