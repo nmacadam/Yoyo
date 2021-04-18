@@ -6,12 +6,17 @@ using System.Collections;
 using System.Net.Sockets;
 using System.Text;
 using UnityEngine;
+using Yoyo.Attributes;
 
 namespace Yoyo.Runtime
 {
+    [System.Serializable]
     public struct SocketParameters
     {
+        [Tooltip("What is the packet buffer size for the socket?")]
+        [NumberDropdown(512, 1024, 2048, 4096, 8192)] 
         public int BufferSize;
+        [Tooltip("Should the socket use Nagle's Algorithm?")]
         public bool NoDelay;
     }
 
