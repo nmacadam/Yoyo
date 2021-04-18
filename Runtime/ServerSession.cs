@@ -35,6 +35,8 @@ namespace Yoyo.Runtime
         {
 			if (IsConnected) return;
 
+            Initialize();
+
             Debug.Log("yoyo - starting server");
 
 			//If we are listening then we are the server.

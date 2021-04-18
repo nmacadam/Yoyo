@@ -19,6 +19,8 @@ namespace Yoyo.Runtime
         {
             if (!IsConnected)
             {
+                Initialize();
+
                 Debug.Log("yoyo - starting client");
                 StartCoroutine(ConnectingClient());
             }

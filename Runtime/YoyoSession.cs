@@ -6,7 +6,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using UnityEngine;
 using Yoyo.Attributes;
 
@@ -33,10 +32,7 @@ namespace Yoyo.Runtime
         public float MasterTimer = .05f;
 
         [Header("Socket Options")]
-        [Tooltip("What is the packet buffer size for the socket?")]
-        [SerializeField, NumberDropdown(512, 1024, 2048, 4096, 8192)] private int _bufferSize = 1024;
-        [Tooltip("Should the socket use Nagle's Algorithm?")]
-        [SerializeField] private bool _noDelay = false;
+        [SerializeField] private SocketParameters _tcpParameters = default;
         
         [Header("Session State")]
         [Tooltip("Is this Yoyo Session representing a client or server?")]
@@ -56,12 +52,10 @@ namespace Yoyo.Runtime
         public GameObject _networkPlayerManager;
 
         private IPAddress _ipAddress;
-        private Dictionary<int, TcpConnection> _connections;
-        private Dictionary<int, NetworkEntity> _netEntities;
+        private Dictionary<int, TcpConnection> _connections = new Dictionary<int, TcpConnection>();
+        private Dictionary<int, NetworkEntity> _netEntities = new Dictionary<int, NetworkEntity>();
         private int _netEntityCount = 0;
         private int _connectionCount = 0;
-
-        private SocketParameters _tcpParameters;
 
         public GameObject[] ContractPrefabs => _contractPrefabs;
         public GameObject NetworkPlayerManager => _networkPlayerManager;
@@ -89,19 +83,18 @@ namespace Yoyo.Runtime
         private object _socketOperationLock = new object();
         private object _masterPacketLock = new object();
 
-        private void Start()
+        private void Initialize() 
         {
-            _environment = YoyoEnvironment.None;
-
-            _tcpParameters = new SocketParameters() 
+            foreach (var cli in GetComponents<ICommandLineInterface>())
             {
-                BufferSize = _bufferSize,
-                NoDelay = _noDelay
-            };
+                cli.ProcessArguments(System.Environment.GetCommandLineArgs());
+            }
+
+            _environment = YoyoEnvironment.None;
             
             IsConnected = false;
             CurrentlyConnecting = false;
-            //ipAddress = "127.0.0.1";//Local host
+
             if (_ipAddressString == "")
             {
                 _ipAddressString = "127.0.0.1"; //Local host
@@ -112,8 +105,6 @@ namespace Yoyo.Runtime
             {
                 _port = 9001;
             }
-            Connections = new Dictionary<int, TcpConnection>();
-            NetEntities = new Dictionary<int, NetworkEntity>();
         }
 
         /// <summary>
@@ -404,6 +395,23 @@ namespace Yoyo.Runtime
                 //yield return new WaitUntil(() => (MessageWaiting || MasterMessage != ""));
                 //yield return new WaitForSecondsRealtime(MasterTimer);
             }
+        }
+
+        public void SetIP(string ipAddress)
+        {
+            _ipAddressString = ipAddress;
+            _ipAddress = IPAddress.Parse(ipAddress);
+        }
+
+        public void SetIP(IPAddress ipAddress)
+        {
+            _ipAddressString = ipAddress.ToString();
+            _ipAddress = ipAddress;
+        }
+
+        public void SetPort(int port)
+        {
+            _port = port;
         }
 	}
 }
