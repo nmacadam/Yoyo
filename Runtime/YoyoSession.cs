@@ -359,7 +359,7 @@ namespace Yoyo.Runtime
                             //item.Value.Send(Encoding.ASCII.GetBytes(MasterMessage));
                             foreach (var packet in MasterPacket)
                             {
-                                Debug.Log("yoyo - sent packet in master packet");
+                                //Debug.Log("yoyo - sent packet in master packet");
                                 //item.Value.Send(packet);
                                 item.Value.Send(new Packet(packet));
                             }

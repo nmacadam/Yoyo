@@ -2,9 +2,7 @@
 // Author: Nathan MacAdam
 
 using System;
-using System.Collections;
 using System.Net.Sockets;
-using System.Text;
 using UnityEngine;
 using Yoyo.Attributes;
 
@@ -70,11 +68,11 @@ namespace Yoyo.Runtime
         {
             try
             {
-                Debug.Log($"yoyo - pre write length: {packet.Length()} byte packet");
+                //Debug.Log($"yoyo - pre write length: {packet.Length()} byte packet");
 
                 packet.WriteLength();
 
-                Debug.Log($"yoyo - sending {packet.Length()} byte packet");
+                //Debug.Log($"yoyo - sending {packet.Length()} byte packet");
 
                 Socket.BeginSend(packet.ToArray(), 0, packet.Length(), 0, new System.AsyncCallback(this.SendCallback), Socket);
                 _tcpIsSending = true;
@@ -121,7 +119,7 @@ namespace Yoyo.Runtime
         {
             try
             {           
-                Debug.Log("yoyo - received packet...");
+                //Debug.Log("yoyo - received packet...");
                 int byteLength = Socket.EndReceive(ar);
 
                 if (byteLength <= 0)
@@ -131,7 +129,7 @@ namespace Yoyo.Runtime
                     return;
                 }
 
-                Debug.Log($"yoyo:packetInfo - received {byteLength} total bytes");
+                //Debug.Log($"yoyo:packetInfo - received {byteLength} total bytes");
 
                 byte[] data = new byte[byteLength];
                 Array.Copy(_buffer, data, byteLength);
@@ -150,7 +148,7 @@ namespace Yoyo.Runtime
 
         private bool HandleData(byte[] data)
         {
-            Debug.Log("yoyo - handling packet data");
+            //Debug.Log("yoyo - handling packet data");
             int _packetLength = 0;
 
             receivedData.SetBytes(data);
@@ -158,11 +156,11 @@ namespace Yoyo.Runtime
             if (receivedData.UnreadLength() >= 4)
             {
                 _packetLength = receivedData.ReadInt();
-                Debug.Log("yoyo:packetInfo - packet length: " + _packetLength);
+                //Debug.Log("yoyo:packetInfo - packet length: " + _packetLength);
 
                 if (_packetLength <= 0)
                 {
-                    Debug.Log("yoyo:packetInfo - completed received data read");
+                    //Debug.Log("yoyo:packetInfo - completed received data read");
                     return true;
                 }
             }
@@ -176,7 +174,7 @@ namespace Yoyo.Runtime
                     PacketHeader header = packet.ReadHeader();
                     //int _packetId = _packet.ReadInt();
                     //Server.packetHandlers[_packetId](id, _packet);
-                    Debug.Log("yoyo:packetInfo - received packet type: " + (PacketType)header.PacketType);
+                    //Debug.Log("yoyo:packetInfo - received packet type: " + (PacketType)header.PacketType);
 
                     if (Session.Environment == YoyoEnvironment.Client)
                     {
@@ -188,17 +186,17 @@ namespace Yoyo.Runtime
                     }
                 });
 
-                Debug.Log("yoyo:packetInfo - remaining unread bytes: " + receivedData.UnreadLength());
+                //Debug.Log("yoyo:packetInfo - remaining unread bytes: " + receivedData.UnreadLength());
 
                 _packetLength = 0;
                 if (receivedData.UnreadLength() >= 4)
                 {
                     _packetLength = receivedData.ReadInt();
-                    Debug.Log("yoyo:packetInfo - packet length: " + _packetLength);
+                    //Debug.Log("yoyo:packetInfo - packet length: " + _packetLength);
 
                     if (_packetLength <= 0)
                     {
-                        Debug.Log("yoyo:packetInfo - completed received data read");
+                        //Debug.Log("yoyo:packetInfo - completed received data read");
                         return true;
                     }
                 }
@@ -206,11 +204,11 @@ namespace Yoyo.Runtime
 
             if (_packetLength <= 1)
             {
-                Debug.Log("yoyo:packetInfo - completed received data read");
+                //Debug.Log("yoyo:packetInfo - completed received data read");
                 return true;
             }
 
-            Debug.Log("yoyo:packetInfo - packet read incomplete...");
+            //Debug.Log("yoyo:packetInfo - packet read incomplete...");
             return false;
         }
 
@@ -389,7 +387,7 @@ namespace Yoyo.Runtime
         private void PassPacketToObject(PacketType type, Packet packet)
         {
             int netId = packet.ReadInt();
-            Debug.Log("Passing to NetID: " + netId);
+            //Debug.Log("Passing to NetID: " + netId);
             if(Session.NetEntities.ContainsKey(netId))
             {
                 ThreadManager.ExecuteOnMainThread(() => Session.NetEntities[netId].Net_Update(type, packet));

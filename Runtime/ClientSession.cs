@@ -41,7 +41,7 @@ namespace Yoyo.Runtime
             // Connect client
             clientSocket.BeginConnect(endP, ConnectingCallback, clientSocket);
 
-            Debug.Log("Trying to wait for server...");
+            Debug.Log("yoyo - trying to wait for server...");
             // Wait for the client to connect
             while(!CurrentlyConnecting)
             {

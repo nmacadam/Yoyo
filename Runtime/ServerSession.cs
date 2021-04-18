@@ -127,7 +127,7 @@ namespace Yoyo.Runtime
             idPacket.Write(session.Connections[session.ConnectionCount - 1].PlayerId);
 			session.Connections[session.ConnectionCount - 1].Send(idPacket);
 
-            Debug.Log("yoyo - sent packet assigning player id " + session.Connections[session.ConnectionCount - 1].PlayerId);
+            //Debug.Log("yoyo - sent packet assigning player id " + session.Connections[session.ConnectionCount - 1].PlayerId);
 
             session.Connections[session.ConnectionCount - 1].BeginReceive();
 
@@ -155,7 +155,7 @@ namespace Yoyo.Runtime
                         session.Connections[session.ConnectionCount - 1].Send(createPacket);
                     }
                     
-                    Debug.Log("yoyo - sent packet creating object type " + entry.Value.Type + $" at ({position})");
+                    //Debug.Log("yoyo - sent packet creating object type " + entry.Value.Type + $" at ({position})");
                 }
             });
 
@@ -183,7 +183,7 @@ namespace Yoyo.Runtime
             //     Debug.Log("yoyo - sent packet creating object type " + entry.Value.Type + $" at ({position})");
             // }
 
-            Debug.Log("yoyo - sending packet to create network player manager");
+            //Debug.Log("yoyo - sending packet to create network player manager");
 
             // Create NetworkPlayerManager
             ThreadManager.ExecuteOnMainThread(() => session.NetInstantiate(-1, session.ConnectionCount - 1));
@@ -240,7 +240,7 @@ namespace Yoyo.Runtime
                     {
                         MasterPacket.Enqueue(createPacket);
                     }
-                    Debug.Log($"yoyo - added create packet to master packet (type: {contractIndex}, owner: {owner}, netId: {NetEntityCount - 1})");
+                    //Debug.Log($"yoyo - added create packet to master packet (type: {contractIndex}, owner: {owner}, netId: {NetEntityCount - 1})");
 
                     foreach(NetworkBehaviour n in go.GetComponents<NetworkBehaviour>())
                     {

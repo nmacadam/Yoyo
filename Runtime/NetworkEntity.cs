@@ -160,7 +160,7 @@ namespace Yoyo.Runtime
             //Debug.Log("Message WAS: " + gameObjectMessages);
             //May need to put race condition blocks here.
 
-            Debug.Log($"yoyo: adding packet of length {packet.Length()} to the waiting queue");
+            //Debug.Log($"yoyo: adding packet of length {packet.Length()} to the waiting queue");
 
             lock (_lock)
             {
@@ -179,7 +179,7 @@ namespace Yoyo.Runtime
         {
             //Get components for network behaviours
             //Destroy self if owner connection is done.
-            Debug.Log("In net update");
+            //Debug.Log("In net update");
             try
             {
                 if (Session.Environment == YoyoEnvironment.Server && Session.Connections.ContainsKey(Owner) == false && Owner != -1)
@@ -208,7 +208,7 @@ namespace Yoyo.Runtime
                         {
                             if (_networkBehaviours[i].BehaviourId == behaviourId)
                             {
-                                Debug.Log("Passing to network behaviour #" + i, _networkBehaviours[i]);
+                                //Debug.Log("Passing to network behaviour #" + i, _networkBehaviours[i]);
                                 //_networkBehaviours[i].HandleMessage(var, value);
                                 _networkBehaviours[i].HandleMessage(new Packet(packet));
                             }
