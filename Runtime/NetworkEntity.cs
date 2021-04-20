@@ -18,13 +18,16 @@ namespace Yoyo.Runtime
         [SerializeField, DisableEditing] private bool _isLocalPlayer;
 
         [Header("GameObject Info")]
-		public int Type = -10;
-        [SerializeField] private List<NetworkBehaviour> _networkBehaviours = new List<NetworkBehaviour>();
+        [SerializeField, DisableEditing] private int _prefabId = -10;
 
-        public Queue<Packet> GameObjectPackets = new Queue<Packet>();
+        [SerializeField] private List<NetworkBehaviour> _networkBehaviours = new List<NetworkBehaviour>();
 
         private YoyoSession _session;
         private List<INetworkSubscriber> _networkSubscribers = new List<INetworkSubscriber>();
+
+        public Queue<Packet> GameObjectPackets = new Queue<Packet>();
+
+        public int PrefabId => _prefabId;
 
         public YoyoSession Session 
         { 
@@ -80,6 +83,11 @@ namespace Yoyo.Runtime
                 _networkBehaviours.Add(behaviours[i]);
             }
         }
+
+        public void SetPrefabId(int type)
+        {
+            _prefabId = type;
+        }
         #endif
 
         // Use this for initialization
@@ -124,7 +132,7 @@ namespace Yoyo.Runtime
                 //     }
                 // }
                 //if (Type == -1)
-                if (!Session.NetworkContract.IsValidIndex(Type))
+                if (!Session.NetworkContract.IsValidIndex(PrefabId))
                 {
                     Debug.LogError($"yoyo - NetworkEntity {name} is not included in NetworkContract!", this);
                     throw new System.Exception("yoyo - NetworkEntity {name} is not included in NetworkContract!");

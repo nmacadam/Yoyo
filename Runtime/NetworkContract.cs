@@ -67,7 +67,7 @@ namespace Yoyo.Runtime
 				NetworkEntity entity = _prefabs[i].GetComponent<NetworkEntity>();
 				if (entity != null)
 				{
-					entity.Type = i;
+					entity.SetPrefabId(i);
 				}
 			}
 		}

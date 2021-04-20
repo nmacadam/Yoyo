@@ -245,7 +245,7 @@ namespace Yoyo.Runtime
                         int owner = packet.ReadInt();
                         int netId = packet.ReadInt();
 
-                        Debug.Log($"Creating object: (type: {type}, owner: {owner}, netId: {netId})");
+                        Debug.Log($"Creating object: (prefab id: {type}, owner: {owner}, netId: {netId})");
 
                         Vector3 position = packet.ReadVector3();
                         Quaternion rotation = packet.ReadQuaternion();
@@ -261,7 +261,7 @@ namespace Yoyo.Runtime
                         // }
                         go.GetComponent<NetworkEntity>().Owner = owner;
                         go.GetComponent<NetworkEntity>().Identifier = netId;
-                        go.GetComponent<NetworkEntity>().Type = type;
+                        //go.GetComponent<NetworkEntity>().Type = type;
                         Session.NetEntities[netId] = go.GetComponent<NetworkEntity>();
                     }
                     catch

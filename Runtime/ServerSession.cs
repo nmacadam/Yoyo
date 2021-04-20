@@ -144,7 +144,7 @@ namespace Yoyo.Runtime
                     {
                         Packet createPacket = new Packet(0, (uint)PacketType.Create);
 
-                        createPacket.Write(entry.Value.Type);
+                        createPacket.Write(entry.Value.PrefabId);
                         createPacket.Write(entry.Value.Owner);
                         createPacket.Write(entry.Value.Identifier);
                         createPacket.Write(entry.Value.transform.position);
@@ -227,7 +227,7 @@ namespace Yoyo.Runtime
                     // }
                     go.GetComponent<NetworkEntity>().Owner = owner;
                     go.GetComponent<NetworkEntity>().Identifier = NetEntityCount;
-                    go.GetComponent<NetworkEntity>().Type = contractIndex;
+                    //go.GetComponent<NetworkEntity>().Type = contractIndex;
                     NetEntities[NetEntityCount] = go.GetComponent<NetworkEntity>();
                     NetEntityCount++;
 
