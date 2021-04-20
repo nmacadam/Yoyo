@@ -119,7 +119,7 @@ namespace Yoyo.Runtime
                 {
                     if (Session.ContractPrefabs[i].gameObject.name == this.gameObject.name.Split('(')[0].Trim())
                     {
-                        Type = i;              
+                        Type = i;
                         break;
                     }
                 }
@@ -229,6 +229,11 @@ namespace Yoyo.Runtime
             packet.Write(Identifier);
             //this.AddMsg("DIRTY#" + Identifier);
             this.AddMsg(packet);
+        }
+
+        protected virtual void OnInitialized() 
+        {
+
         }
 	}
 }
