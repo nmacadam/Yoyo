@@ -48,8 +48,8 @@ namespace Yoyo.Runtime
         private bool _currentlyConnecting = false;
 
         [Header("Session Contract")]
-        public GameObject[] _contractPrefabs;
-        public GameObject _networkPlayerManager;
+        [SerializeField, Expandable]
+        private NetworkContract _networkContract = default;
 
         private IPAddress _ipAddress;
         private Dictionary<int, TcpConnection> _connections = new Dictionary<int, TcpConnection>();
@@ -57,8 +57,7 @@ namespace Yoyo.Runtime
         private int _netEntityCount = 0;
         private int _connectionCount = 0;
 
-        public GameObject[] ContractPrefabs => _contractPrefabs;
-        public GameObject NetworkPlayerManager => _networkPlayerManager;
+        public NetworkContract NetworkContract => _networkContract;
 
         public IPAddress Address => _ipAddress;
         public YoyoEnvironment Environment => _environment;

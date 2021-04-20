@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using Yoyo.Attributes;
 
-namespace Yoyo.Editor.Attributes
+namespace Yoyo.Editors.Attributes
 {
 	/// <summary>
 	/// Drawer for drawing DisableEditing attribute

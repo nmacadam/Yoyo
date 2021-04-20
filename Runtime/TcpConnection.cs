@@ -250,15 +250,15 @@ namespace Yoyo.Runtime
                         Vector3 position = packet.ReadVector3();
                         Quaternion rotation = packet.ReadQuaternion();
                         
-                        GameObject go;
-                        if (type != -1)
-                        {
-                            go = GameObject.Instantiate(Session.ContractPrefabs[type], position, rotation);
-                        }
-                        else
-                        {
-                            go = GameObject.Instantiate(Session.NetworkPlayerManager, position, rotation);
-                        }
+                        GameObject go = GameObject.Instantiate(Session.NetworkContract.GetPrefab(type), position, rotation);
+                        // if (type != -1)
+                        // {
+                        //     go = GameObject.Instantiate(Session.ContractPrefabs[type], position, rotation);
+                        // }
+                        // else
+                        // {
+                        //     go = GameObject.Instantiate(Session.NetworkPlayerManager, position, rotation);
+                        // }
                         go.GetComponent<NetworkEntity>().Owner = owner;
                         go.GetComponent<NetworkEntity>().Identifier = netId;
                         go.GetComponent<NetworkEntity>().Type = type;
