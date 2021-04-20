@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEditor;
 using RangeInt = Yoyo.Runtime.Utilities.RangeInt;
 
-namespace Yoyo.Editor
+namespace Yoyo.Editors
 {
 	[CustomPropertyDrawer(typeof(RangeInt))]
 	public class RangeDrawer: PropertyDrawer 

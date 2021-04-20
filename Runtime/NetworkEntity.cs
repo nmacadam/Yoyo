@@ -18,7 +18,7 @@ namespace Yoyo.Runtime
         [SerializeField, DisableEditing] private bool _isLocalPlayer;
 
         [Header("GameObject Info")]
-		public int Type;
+		public int Type = -10;
         [SerializeField] private List<NetworkBehaviour> _networkBehaviours = new List<NetworkBehaviour>();
 
         public Queue<Packet> GameObjectPackets = new Queue<Packet>();
@@ -114,19 +114,20 @@ namespace Yoyo.Runtime
             if (IsServer && Identifier == -10)
             {
                 //We need to add ourselves to the networked object dictionary
-                Type = -1;
-                for (int i = 0; i < Session.ContractPrefabs.Length; i++)
+                //Type = -1;
+                // for (int i = 0; i < Session.ContractPrefabs.Length; i++)
+                // {
+                //     if (Session.ContractPrefabs[i].gameObject.name == this.gameObject.name.Split('(')[0].Trim())
+                //     {
+                //         Type = i;
+                //         break;
+                //     }
+                // }
+                //if (Type == -1)
+                if (!Session.NetworkContract.IsValidIndex(Type))
                 {
-                    if (Session.ContractPrefabs[i].gameObject.name == this.gameObject.name.Split('(')[0].Trim())
-                    {
-                        Type = i;
-                        break;
-                    }
-                }
-                if (Type == -1)
-                {
-                    Debug.LogError("Game object not found in prefab list! Game Object name - " + this.gameObject.name.Split('(')[0].Trim());
-                    throw new System.Exception("FATAL - Game Object not found in prefab list!");
+                    Debug.LogError($"yoyo - NetworkEntity {name} is not included in NetworkContract!", this);
+                    throw new System.Exception("yoyo - NetworkEntity {name} is not included in NetworkContract!");
                 }
                 else
                 {

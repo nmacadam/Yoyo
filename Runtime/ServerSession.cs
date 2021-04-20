@@ -186,7 +186,7 @@ namespace Yoyo.Runtime
             //Debug.Log("yoyo - sending packet to create network player manager");
 
             // Create NetworkPlayerManager
-            ThreadManager.ExecuteOnMainThread(() => session.NetInstantiate(-1, session.ConnectionCount - 1));
+            ThreadManager.ExecuteOnMainThread(() => session.NetInstantiate(0, session.ConnectionCount - 1));
             session.CurrentlyConnecting = false;
         }
 
@@ -215,14 +215,16 @@ namespace Yoyo.Runtime
                 GameObject go;
                 lock(ObjLock)
                 {
-                    if (contractIndex != -1)
-                    {
-                        go = GameObject.Instantiate(ContractPrefabs[contractIndex], position, rotation);
-                    }
-                    else
-                    {
-                        go = GameObject.Instantiate(NetworkPlayerManager, position, rotation);
-                    }
+                    go = GameObject.Instantiate(NetworkContract.GetPrefab(contractIndex), position, rotation);
+
+                    // if (contractIndex != -1)
+                    // {
+                    //     go = GameObject.Instantiate(ContractPrefabs[contractIndex], position, rotation);
+                    // }
+                    // else
+                    // {
+                    //     go = GameObject.Instantiate(NetworkPlayerManager, position, rotation);
+                    // }
                     go.GetComponent<NetworkEntity>().Owner = owner;
                     go.GetComponent<NetworkEntity>().Identifier = NetEntityCount;
                     go.GetComponent<NetworkEntity>().Type = contractIndex;
