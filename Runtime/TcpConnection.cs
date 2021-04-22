@@ -410,7 +410,12 @@ namespace Yoyo.Runtime
             //Debug.Log("Passing to NetID: " + netId);
             if(Session.NetEntities.ContainsKey(netId))
             {
-                ThreadManager.ExecuteOnMainThread(() => Session.NetEntities[netId].Net_Update(type, packet));
+                try
+                {
+                    ThreadManager.ExecuteOnMainThread(() => Session.NetEntities[netId].Net_Update(type, packet));
+                }
+                catch
+                {}
             }
         }
 	}

@@ -227,8 +227,15 @@ namespace Yoyo.Runtime
                     //Client double-tapped disconnect.
                     //Ignore.
                 }
-                StartCoroutine(WaitForDisc());
-                
+
+                try
+                {
+                    StartCoroutine(WaitForDisc());
+                }
+                catch 
+                {
+                    return;
+                }
             }
             if (Environment == YoyoEnvironment.Server && IsConnected)
             {
