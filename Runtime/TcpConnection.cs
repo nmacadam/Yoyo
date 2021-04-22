@@ -404,6 +404,8 @@ namespace Yoyo.Runtime
 
         private void PassPacketToObject(PacketType type, Packet packet)
         {
+            if (Session == null || Session.ShuttingDown) return;
+
             int netId = packet.ReadInt();
             //Debug.Log("Passing to NetID: " + netId);
             if(Session.NetEntities.ContainsKey(netId))
