@@ -72,6 +72,8 @@ namespace Yoyo.Runtime
         public int NetEntityCount { get => _netEntityCount; set => _netEntityCount = value; }
         public int ConnectionCount { get => _connectionCount; set => _connectionCount = value; }
 
+        public bool ShuttingDown => _shuttingDown;
+
         public SocketParameters TcpParameters => _tcpParameters;
 
         //WE are going to push a variable to notify the master an ID has a message.

@@ -118,6 +118,8 @@ namespace Yoyo.Runtime
 
         public void BeginReceive()
         {
+            if (_session == null || _session.ShuttingDown) return;
+
             Debug.Log("yoyo - socket is ready to receive packets");
             try
             {
@@ -131,6 +133,8 @@ namespace Yoyo.Runtime
 
         private void TCPRecvCallback(System.IAsyncResult ar)
         {
+            if (_session == null || _session.ShuttingDown) return;
+
             try
             {           
                 //Debug.Log("yoyo - received packet...");
