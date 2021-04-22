@@ -86,8 +86,19 @@ namespace Yoyo.Runtime
 			// Get the socket that handles the client request.
             ListenerSocketState state = (ListenerSocketState)ar.AsyncState;
             Socket listener = state.WorkSocket;
-            Socket handler = listener.EndAccept(ar);
+
+
+            try
+            {
+                Socket handler = listener.EndAccept(ar);
+            }
+            catch
+            {
+                return;
+            }
+            
 			YoyoSession session = state.Session;
+            if (session._shuttingDown) return;
 
             Debug.Log("yoyo - incoming connection...");
             session.CurrentlyConnecting = true;
@@ -207,6 +218,8 @@ namespace Yoyo.Runtime
         public IEnumerator ShutdownServerRoutine()
         {
             if (Environment != YoyoEnvironment.Server || !IsConnected) yield break;
+
+            _shuttingDown = true;
 
             List<int> disconnectTargets = new List<int>();
             foreach (var connection in Connections)

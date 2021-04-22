@@ -57,6 +57,8 @@ namespace Yoyo.Runtime
         private int _netEntityCount = 0;
         private int _connectionCount = 0;
 
+        private bool _shuttingDown = false;
+
         public NetworkContract NetworkContract => _networkContract;
 
         public IPAddress Address => _ipAddress;
@@ -308,9 +310,11 @@ namespace Yoyo.Runtime
         }
 
         private void Update()
-        //public void LateUpdate()
         {
-            ThreadManager.UpdateMain();
+            if (!_shuttingDown)
+            {
+                ThreadManager.UpdateMain();
+            }
         }
 
         /// <summary>
