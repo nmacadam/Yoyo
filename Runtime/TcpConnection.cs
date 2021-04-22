@@ -57,6 +57,20 @@ namespace Yoyo.Runtime
             _socket.NoDelay = parameters.NoDelay;
         }
 
+        ~TcpConnection()
+        {
+            if (_socket != null && _socket.Connected)
+            {
+                try
+                {
+                    Socket.Shutdown(SocketShutdown.Both);
+                    Socket.Close();
+                }
+                catch 
+                {}
+            }
+        }
+
         /// <summary>
         /// SEND STUFF
         /// This will deal with sending information across the current 
@@ -141,8 +155,8 @@ namespace Yoyo.Runtime
             {
                 //Cannot do anything here.  The callback is not allowed to disconnect.
                 //Debug.Log("yoyo - exception: " + e.ToString());
-                Socket.Shutdown(SocketShutdown.Both);
-                Socket.Close();
+                //Socket.Shutdown(SocketShutdown.Both);
+                //Socket.Close();
             }
         }
 
@@ -353,7 +367,7 @@ namespace Yoyo.Runtime
                     {
                         // ! could be wrong!
                         int badCon = packet.ReadInt();
-                        Session.Disconnect(badCon);
+                        Session.DisconnectClient(badCon);
                         Debug.Log("There are now only " + Session.Connections.Count + " players in the game.");
                     }
                     catch (System.FormatException)
