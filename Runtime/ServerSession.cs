@@ -87,10 +87,10 @@ namespace Yoyo.Runtime
             ListenerSocketState state = (ListenerSocketState)ar.AsyncState;
             Socket listener = state.WorkSocket;
 
-
+            Socket handler = null;
             try
             {
-                Socket handler = listener.EndAccept(ar);
+                handler = listener.EndAccept(ar);
             }
             catch
             {
