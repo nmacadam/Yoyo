@@ -1,6 +1,7 @@
 ﻿// Yoyo Network Engine, 2021
 // Author: Nathan MacAdam
 
+using System;
 using System.Collections;
 using System.Net;
 using System.Net.Sockets;
@@ -10,7 +11,11 @@ namespace Yoyo.Runtime
 {
 	public partial class YoyoSession : MonoBehaviour
 	{
-		/// <summary>
+        private Action _onNoServerResponse;
+
+        public Action OnNoServerResponse { get => _onNoServerResponse; set => _onNoServerResponse = value; }
+
+        /// <summary>
         /// Client Functions 
         /// Start Client - Will join with a server specified
         /// at IpAddress and Port.
@@ -48,8 +53,26 @@ namespace Yoyo.Runtime
                 yield return new WaitForSecondsRealtime(MasterTimer);
             }
 
+            StartCoroutine(CancelIfNoResponse());
+
             Connections[0].BeginReceive(); // It is 0 on the client because we only have 1 socket.
             StartCoroutine(SlowUpdate());  // This will allow the client to send messages to the server.
+        }
+
+        private IEnumerator CancelIfNoResponse()
+        {
+            float _t = Time.unscaledTime;
+
+            while(_localPlayerId == -1)
+            {
+                if (Time.unscaledTime - _t > 10f)
+                {
+                    _onNoServerResponse?.Invoke();
+                    yield break;
+                }
+
+                yield return null;
+            }
         }
 
         public void ConnectingCallback(System.IAsyncResult ar)
