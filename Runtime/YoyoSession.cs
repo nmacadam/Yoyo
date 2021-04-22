@@ -58,6 +58,7 @@ namespace Yoyo.Runtime
         private int _connectionCount = 0;
 
         private bool _shuttingDown = false;
+        private bool _processedCustomArguments = false;
 
         public NetworkContract NetworkContract => _networkContract;
 
@@ -88,10 +89,16 @@ namespace Yoyo.Runtime
 
         private void Initialize() 
         {
-            foreach (var cli in GetComponents<ICommandLineInterface>())
+            if (!_processedCustomArguments)
             {
-                cli.ProcessArguments(System.Environment.GetCommandLineArgs());
+                foreach (var cli in GetComponents<ICommandLineInterface>())
+                {
+                    cli.ProcessArguments(System.Environment.GetCommandLineArgs());
+                }
+                
+                _processedCustomArguments = true;
             }
+            
 
             _environment = YoyoEnvironment.None;
             
