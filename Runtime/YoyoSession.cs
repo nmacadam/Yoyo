@@ -91,12 +91,11 @@ namespace Yoyo.Runtime
         {
             if (!_processedCustomArguments)
             {
+                _processedCustomArguments = true;
                 foreach (var cli in GetComponents<ICommandLineInterface>())
                 {
                     cli.ProcessArguments(System.Environment.GetCommandLineArgs());
                 }
-                
-                _processedCustomArguments = true;
             }
             
 
