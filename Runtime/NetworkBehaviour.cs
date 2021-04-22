@@ -29,7 +29,8 @@ namespace Yoyo.Runtime
             while (true)
             {
                 NetUpdate();
-                yield return null;
+                //yield return null;
+                yield return new WaitForSecondsRealtime(Entity.Session.MasterTimer);
             }
         }
 
