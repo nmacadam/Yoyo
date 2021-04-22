@@ -22,7 +22,6 @@ namespace Yoyo.Runtime
 		}
 
         private object _sendLock = new object();
-
         private Socket _tcpListener;
 
 		/// <summary>
@@ -46,21 +45,21 @@ namespace Yoyo.Runtime
 
 			IPAddress ip = (IPAddress.Any);
             IPEndPoint localEndPoint = new IPEndPoint(ip, _port);
-			Socket listener = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+			_tcpListener = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
 			try
             {
-                listener.Bind(localEndPoint);
-                listener.Listen(_maxConnections);
+                _tcpListener.Bind(localEndPoint);
+                _tcpListener.Listen(_maxConnections);
 
                 ListenerSocketState state = new ListenerSocketState();
 				state.Session = this;
-                state.WorkSocket = listener;
+                state.WorkSocket = _tcpListener;
                 //state.Info = _info;
                 state.MaxConnections = _maxConnections;
                 //state.Connections = _connections;
 
-                listener.BeginAccept(AcceptCallback, state);
+                _tcpListener.BeginAccept(AcceptCallback, state);
            	 	StartCoroutine(SlowUpdate());
             }
             catch (Exception e)
@@ -239,9 +238,7 @@ namespace Yoyo.Runtime
                 _tcpListener.Close();
             }
             catch
-            {
-
-            }
+            {}
 
             _isConnected = false;
             _environment = YoyoEnvironment.None;

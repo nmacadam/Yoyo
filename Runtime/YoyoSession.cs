@@ -126,7 +126,9 @@ namespace Yoyo.Runtime
                     catch
                     { }                 
                     try
-                    {badCon.Socket.Close();}
+                    {
+                        badCon.Socket.Close();
+                    }
                     catch
                     {}
                 }
