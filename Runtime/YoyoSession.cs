@@ -112,13 +112,13 @@ namespace Yoyo.Runtime
         /// Disconnect
         /// OnClientDisconnect -> is virtual so you can override it
         /// </summary>
-        public void Disconnect(int badConnection)
+        public void DisconnectClient(int connectionId)
         {
             if (Environment == YoyoEnvironment.Client)
             {
-                if (Connections.ContainsKey(badConnection))
+                if (Connections.ContainsKey(connectionId))
                 {
-                    TcpConnection badCon = Connections[badConnection];
+                    TcpConnection badCon = Connections[connectionId];
                     try
                     {
                         badCon.Socket.Shutdown(SocketShutdown.Both);
@@ -144,9 +144,9 @@ namespace Yoyo.Runtime
             {
                 try
                 {
-                    if (Connections.ContainsKey(badConnection))
+                    if (Connections.ContainsKey(connectionId))
                     {
-                        TcpConnection badCon = Connections[badConnection];
+                        TcpConnection badCon = Connections[connectionId];
                         badCon.Socket.Shutdown(SocketShutdown.Both);
                         badCon.Socket.Close();  
                     }
@@ -165,8 +165,8 @@ namespace Yoyo.Runtime
                     Debug.Log("Warning - Error caught in the generic catch!\nINFO: "+e.ToString());
                 }
                 //Delete All other players objects....
-                OnClientDisc(badConnection);
-                Connections.Remove(badConnection);
+                OnClientDisc(connectionId);
+                Connections.Remove(connectionId);
             }
         }
 
@@ -262,7 +262,7 @@ namespace Yoyo.Runtime
                 {
                     foreach (KeyValuePair<int, TcpConnection> entry in Connections)
                     {
-                        Disconnect(entry.Key);
+                        DisconnectClient(entry.Key);
                     }
                 }
                 catch (System.NullReferenceException)
@@ -295,7 +295,7 @@ namespace Yoyo.Runtime
             if (Environment == YoyoEnvironment.Client)
             {
                 yield return new WaitUntil(() => Connections[0].DidDisconnect);
-                Disconnect(0);
+                DisconnectClient(0);
             }
             yield return new WaitForSecondsRealtime(.1f);
         }
@@ -378,7 +378,7 @@ namespace Yoyo.Runtime
                     {
                         foreach (int i in bad)
                         {
-                            this.Disconnect(i);
+                            this.DisconnectClient(i);
                         }
                     }
                 }

@@ -200,6 +200,59 @@ namespace Yoyo.Runtime
             }
         }
 
+        public void ShutdownServer()
+        {
+            StartCoroutine(ShutdownServerRoutine());
+        }
+
+        public IEnumerator ShutdownServerRoutine()
+        {
+            if (Environment != YoyoEnvironment.Server || !IsConnected) yield break;
+
+            List<int> disconnectTargets = new List<int>();
+            foreach (var connection in Connections)
+			{
+                Packet disconnectPacket = new Packet(0, (uint)PacketType.Disconnect);
+                disconnectPacket.Write(connection.Value.PlayerId);
+
+                connection.Value.Send(disconnectPacket);
+				disconnectTargets.Add(connection.Key);
+			}
+
+            yield return new WaitForSecondsRealtime(3f);
+
+            foreach (var target in disconnectTargets)
+            {
+                DisconnectClient(target);
+            }
+
+            foreach (var entity in NetEntities.Values)
+            {
+                if (entity != null)
+                {
+                    Destroy(entity.gameObject);
+                }
+            }
+
+            try
+            {
+                _tcpListener.Close();
+            }
+            catch
+            {
+
+            }
+
+            _isConnected = false;
+            _environment = YoyoEnvironment.None;
+            _currentlyConnecting = false;
+            _connectionCount = 0;
+            _netEntityCount = 0;
+
+            NetEntities.Clear();
+            Connections.Clear();
+        }
+
         /// <summary>
         /// Instantiates an GameObject across the network
         /// </summary>
